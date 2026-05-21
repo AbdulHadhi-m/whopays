@@ -13,7 +13,7 @@ const MEME_CAPTIONS = [
   "SUS: Tried to hide in the bathroom, but fate found you! 🤫",
   "COPE HARDER: Get that credit card sliding! 🎭",
   "EMOTIONAL DAMAGE: Absolute rip to your savings! 💔",
-  "IT'S A SETUP: The universe chose violence today! ⚡",
+  "IT'S A SETUP: The universe chose violence today! ⚡💀",
   "SHEESH: Congratulations, you're the designated sugar daddy! 💅"
 ];
 
