@@ -1,0 +1,142 @@
+@import "tailwindcss";
+
+@theme {
+  --color-neon-purple: #9d00ff;
+  --color-neon-pink: #ff007a;
+  --color-neon-cyan: #00f0ff;
+  --color-neon-green: #39ff14;
+  --color-dark-bg: #07050f;
+  --color-dark-card: #0e0a21;
+  --color-dark-border: rgba(255, 255, 255, 0.08);
+
+  --font-sans: var(--font-geist-sans), Arial, sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  --animate-neon-pulse-pink: neon-pulse-pink 2s infinite alternate;
+  --animate-neon-pulse-cyan: neon-pulse-cyan 2s infinite alternate;
+  --animate-float: float 6s ease-in-out infinite;
+  --animate-pulse-glow: pulse-glow 2s infinite ease-in-out;
+  --animate-wheel-spin-fast: spin 0.15s linear infinite;
+
+  @keyframes neon-pulse-pink {
+    from {
+      box-shadow: 0 0 4px #ff007a, 0 0 10px #ff007a, 0 0 1px rgba(255, 0, 122, 0.2);
+    }
+    to {
+      box-shadow: 0 0 12px #ff007a, 0 0 24px #ff007a, 0 0 4px rgba(255, 0, 122, 0.4);
+    }
+  }
+
+  @keyframes neon-pulse-cyan {
+    from {
+      box-shadow: 0 0 4px #00f0ff, 0 0 10px #00f0ff, 0 0 1px rgba(0, 240, 255, 0.2);
+    }
+    to {
+      box-shadow: 0 0 12px #00f0ff, 0 0 24px #00f0ff, 0 0 4px rgba(0, 240, 255, 0.4);
+    }
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-8px);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 0.75;
+      filter: drop-shadow(0 0 4px #9d00ff);
+    }
+    50% {
+      opacity: 1;
+      filter: drop-shadow(0 0 16px #9d00ff);
+    }
+  }
+}
+
+:root {
+  --background: #07050f;
+  --foreground: #ffffff;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #07050f;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f1b3d;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9d00ff;
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(14, 10, 33, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-glow-purple {
+  background: rgba(14, 10, 33, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(157, 0, 255, 0.2);
+  box-shadow: 0 0 25px rgba(157, 0, 255, 0.15);
+}
+
+.glass-panel-glow-pink {
+  background: rgba(14, 10, 33, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 0, 122, 0.2);
+  box-shadow: 0 0 25px rgba(255, 0, 122, 0.15);
+}
+
+.glass-panel-glow-cyan {
+  background: rgba(14, 10, 33, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(0, 240, 255, 0.2);
+  box-shadow: 0 0 25px rgba(0, 240, 255, 0.15);
+}
+
+/* Neon Text Glows */
+.text-neon-pink {
+  text-shadow: 0 0 5px #ff007a, 0 0 10px #ff007a, 0 0 20px #ff007a;
+}
+.text-neon-cyan {
+  text-shadow: 0 0 5px #00f0ff, 0 0 10px #00f0ff, 0 0 20px #00f0ff;
+}
+.text-neon-purple {
+  text-shadow: 0 0 5px #9d00ff, 0 0 10px #9d00ff, 0 0 20px #9d00ff;
+}
+
+/* Grid Casino Lines Overlay */
+.grid-overlay {
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(157, 0, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(157, 0, 255, 0.03) 1px, transparent 1px);
+}
+
+/* Sound Tick Animation */
+.tick-transition {
+  transition: transform 0.05s ease-out;
+}
