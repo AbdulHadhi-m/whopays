@@ -6,7 +6,7 @@ export async function GET() {
   try {
     const client = await clientPromise;
     if (client) {
-      const db = client.db("whopays");
+      const db = client.db("whopay");
       const spins = await db
         .collection("spins")
         .find({})
@@ -20,6 +20,9 @@ export async function GET() {
         participants: spin.participants,
         winner: spin.winner,
         createdAt: spin.createdAt.toISOString(),
+        type: spin.type || "spin",
+        dice1: spin.dice1,
+        dice2: spin.dice2,
       }));
 
       return NextResponse.json({ history, success: true });
@@ -38,6 +41,9 @@ export async function GET() {
       participants: item.participants,
       winner: item.winner,
       createdAt: item.createdAt.toISOString(),
+      type: item.type || "spin",
+      dice1: (item as any).dice1,
+      dice2: (item as any).dice2,
     }));
 
   return NextResponse.json({ history: sortedHistory, success: true });
@@ -46,7 +52,7 @@ export async function GET() {
 // POST: Trigger a new server spin and log it
 export async function POST(req: NextRequest) {
   try {
-    const { participants } = await req.json();
+    const { participants, type = "spin" } = await req.json();
 
     if (!participants || !Array.isArray(participants) || participants.length < 2) {
       return NextResponse.json(
@@ -55,26 +61,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Server-side secure random pick
-    const selectedIndex = Math.floor(Math.random() * participants.length);
-    const winnerName = participants[selectedIndex];
+    let selectedIndex: number;
+    let winnerName: string;
+    let dice1: number | undefined;
+    let dice2: number | undefined;
 
-    const spinData = {
+    if (type === "dice") {
+      dice1 = Math.floor(Math.random() * 6) + 1;
+      dice2 = Math.floor(Math.random() * 6) + 1;
+      selectedIndex = (dice1 + dice2) % participants.length;
+      winnerName = participants[selectedIndex];
+    } else {
+      selectedIndex = Math.floor(Math.random() * participants.length);
+      winnerName = participants[selectedIndex];
+    }
+
+    const spinData: any = {
+      type,
       participants,
       winner: winnerName,
       createdAt: new Date(),
     };
 
+    if (type === "dice") {
+      spinData.dice1 = dice1;
+      spinData.dice2 = dice2;
+    }
+
     // Try MongoDB
     try {
       const client = await clientPromise;
       if (client) {
-        const db = client.db("whopays");
+        const db = client.db("whopay");
         const result = await db.collection("spins").insertOne(spinData);
         return NextResponse.json({
           id: result.insertedId.toString(),
           selectedIndex,
           winner: winnerName,
+          dice1,
+          dice2,
+          type,
           success: true,
         });
       }
@@ -86,9 +112,12 @@ export async function POST(req: NextRequest) {
     const mockDb = getMockDb();
     const newMockItem = {
       id: `mock-${Date.now()}`,
+      type,
       participants,
       winner: winnerName,
       createdAt: new Date(),
+      dice1,
+      dice2,
     };
     mockDb.push(newMockItem);
 
@@ -96,6 +125,9 @@ export async function POST(req: NextRequest) {
       id: newMockItem.id,
       selectedIndex,
       winner: winnerName,
+      dice1,
+      dice2,
+      type,
       success: true,
     });
   } catch (err) {

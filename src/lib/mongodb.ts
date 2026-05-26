@@ -12,6 +12,7 @@ interface SpinHistoryItem {
   participants: string[];
   winner: string;
   createdAt: Date;
+  type?: string;
 }
 
 // Global in-memory storage to persist session data during dev mode when DB is not connected

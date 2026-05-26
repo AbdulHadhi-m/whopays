@@ -1,112 +1,220 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { motion, AnimatePresence } from "framer-motion";
-import { History, Calendar, Flame, AlertCircle } from "lucide-react";
+import { History, RefreshCw, AlertCircle } from "lucide-react";
+
+type Tab = "spin" | "dice";
+
+function getInitials(name: string) {
+  return (
+    name
+      .replace(/\p{Emoji}/gu, "")
+      .trim()
+      .split(" ")
+      .map((w) => w[0] ?? "")
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?"
+  );
+}
+
+const AVATAR_COLORS = [
+  "#ff4081", "#2979ff", "#00c853", "#ff6d00",
+  "#6c3bff", "#00bcd4", "#f44336", "#ffd600",
+];
 
 export default function RecentSpins() {
   const { spinHistory, fetchHistory } = useGameStore();
+  const [activeTab, setActiveTab] = useState<Tab>("spin");
+  const [loading, setLoading] = useState(false);
 
-  // Load history on client mount
+  const load = async () => {
+    setLoading(true);
+    await fetchHistory();
+    setLoading(false);
+  };
+
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const formatTime = (isoString: string) => {
+  const formatTime = (iso: string) => {
     try {
-      const date = new Date(isoString);
-      return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     } catch {
       return "Just now";
     }
   };
 
-  return (
-    <div className="w-full glass-panel rounded-3xl p-6 border border-white/5 relative overflow-hidden">
-      {/* Decorative background glow */}
-      <div className="absolute top-0 right-0 w-24 h-24 bg-neon-cyan/5 rounded-full blur-2xl pointer-events-none" />
+  const formatDate = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" });
+    } catch {
+      return "";
+    }
+  };
 
+  const filteredHistory = spinHistory.filter((spin) => (spin.type || "spin") === activeTab);
+
+  return (
+    <section
+      id="history"
+      className="rounded-2xl border p-5"
+      style={{
+        background: "var(--card-bg)",
+        borderColor: "var(--card-border)",
+        boxShadow: "0 2px 16px var(--card-shadow)",
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-neon-cyan/10 rounded-xl border border-neon-cyan/20">
-          <History className="text-neon-cyan w-5 h-5 animate-pulse" />
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-9 h-9 rounded-xl flex items-center justify-center text-lg"
+            style={{ background: "var(--accent-light)" }}
+          >
+            🕐
+          </div>
+          <div>
+            <h3 className="font-black text-sm" style={{ color: "var(--foreground)" }}>
+              History
+            </h3>
+            <p className="text-[10px] font-semibold" style={{ color: "var(--text-muted)" }}>
+              Recent rounds
+            </p>
+          </div>
         </div>
-        <div>
-          <h3 className="text-lg font-bold text-white tracking-wide">
-            Wall of Shame
-          </h3>
-          <p className="text-xs text-gray-400 font-mono tracking-wider uppercase">
-            Recent Victims Feed
-          </p>
-        </div>
+
+        <button
+          onClick={load}
+          disabled={loading}
+          className="flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-xl transition-all"
+          style={{ background: "var(--accent-light)", color: "var(--text-accent)" }}
+        >
+          <RefreshCw size={12} className={loading ? "animate-spin" : ""} />
+          Refresh
+        </button>
       </div>
 
-      {/* Content Feed */}
-      <div className="space-y-3 max-h-[300px] overflow-y-auto pr-1">
-        <AnimatePresence initial={false}>
-          {spinHistory.length === 0 ? (
+      {/* Tabs */}
+      <div className="tab-toggle mb-4">
+        <button
+          id="tab-spin"
+          onClick={() => setActiveTab("spin")}
+          className={`tab-btn ${activeTab === "spin" ? "active" : ""}`}
+        >
+          🎰 Spin Wheel
+        </button>
+        <button
+          id="tab-dice"
+          onClick={() => setActiveTab("dice")}
+          className={`tab-btn ${activeTab === "dice" ? "active" : ""}`}
+        >
+          🎲 Dice Rolls
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+        <AnimatePresence mode="wait">
+          {filteredHistory.length === 0 ? (
             <motion.div
+              key="empty"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="py-8 text-center text-gray-500 flex flex-col items-center justify-center gap-2"
+              exit={{ opacity: 0 }}
+              className="py-8 text-center flex flex-col items-center gap-3"
             >
-              <AlertCircle size={24} className="text-neon-purple/50" />
-              <p className="text-xs font-mono">NO VICTIMS LOGGED YET</p>
+              <AlertCircle size={28} style={{ color: "var(--sub-accent)" }} />
+              <p className="text-xs font-bold" style={{ color: "var(--text-muted)" }}>
+                No rounds yet!
+              </p>
+              <p className="text-[10px] font-semibold" style={{ color: "var(--sub-accent)" }}>
+                {activeTab === "spin" ? "Spin the wheel to get started." : "Roll the dice to get started."}
+              </p>
             </motion.div>
           ) : (
-            spinHistory.map((spin, idx) => (
-              <motion.div
-                key={spin.id || idx}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="p-4 rounded-2xl bg-[#0f0b24] border border-white/5 flex items-center justify-between hover:border-neon-purple/30 hover:bg-[#130d2d] transition-all duration-300"
-              >
-                <div className="flex-1 min-w-0 pr-4">
-                  {/* Winner / Loser Name */}
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-extrabold text-neon-pink truncate">
-                      {spin.winner}
-                    </span>
-                    <span className="text-[9px] font-mono bg-neon-pink/10 border border-neon-pink/20 text-neon-pink px-2 py-0.5 rounded-full tracking-widest uppercase scale-90">
-                      Paid 💸
-                    </span>
+            filteredHistory.map((spin, idx) => {
+              const avatarColor = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+              const initials = getInitials(spin.winner);
+              return (
+                <motion.div
+                  key={spin.id || idx}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.18, delay: idx * 0.04 }}
+                  className="flex items-center gap-3 p-3 rounded-2xl transition-all cursor-default"
+                  style={{
+                    background: "var(--recent-bg)",
+                    border: "1.5px solid var(--recent-border)",
+                  }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--accent-light)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "var(--card-border)";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.background = "var(--recent-bg)";
+                    (e.currentTarget as HTMLElement).style.borderColor = "var(--recent-border)";
+                  }}
+                >
+                  <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                    style={{ background: avatarColor }}
+                  >
+                    {initials}
                   </div>
 
-                  {/* Participants Count / Names */}
-                  <p className="text-xs text-gray-400 truncate max-w-[220px]">
-                    Group: {spin.participants.join(", ")}
-                  </p>
-                </div>
-
-                {/* Time Stamp */}
-                <div className="text-right flex flex-col items-end shrink-0">
-                  <div className="flex items-center gap-1 text-[10px] text-gray-400 font-mono">
-                    <Calendar size={10} className="text-neon-cyan" />
-                    <span>{formatTime(spin.createdAt)}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-black text-xs truncate" style={{ color: "var(--foreground)" }}>
+                        {spin.winner}
+                      </span>
+                      <span className={spin.type === "dice" ? "badge-dice" : "badge-paid"}>
+                        {spin.type === "dice" ? "🎲 Dice" : "Paid"}
+                      </span>
+                    </div>
+                    <p
+                      className="text-[10px] font-semibold truncate"
+                      style={{ color: "var(--text-muted)", maxWidth: 240 }}
+                    >
+                      {spin.type === "dice" && spin.dice1 !== undefined && spin.dice2 !== undefined
+                        ? `Rolled ${spin.dice1} + ${spin.dice2} = ${spin.dice1 + spin.dice2} · (${spin.participants.slice(0, 3).join(", ")}${spin.participants.length > 3 ? "…" : ""})`
+                        : spin.participants.slice(0, 4).join(", ")}
+                    </p>
                   </div>
-                  <span className="text-[9px] text-gray-500 font-mono tracking-widest mt-1">
-                    {spin.participants.length} PLAYERS
-                  </span>
-                </div>
-              </motion.div>
-            ))
+
+                  <div className="text-right flex-shrink-0">
+                    <p className="text-[10px] font-bold" style={{ color: "var(--text-muted)" }}>
+                      {formatTime(spin.createdAt)}
+                    </p>
+                    <p className="text-[9px] font-semibold" style={{ color: "var(--sub-accent)" }}>
+                      {formatDate(spin.createdAt)}
+                    </p>
+                  </div>
+                </motion.div>
+              );
+            })
           )}
         </AnimatePresence>
       </div>
 
-      {/* Footer statistics decoration */}
-      {spinHistory.length > 0 && (
-        <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-[10px] font-mono text-gray-500">
+      {/* Footer */}
+      {filteredHistory.length > 0 && (
+        <div
+          className="mt-3 pt-3 flex items-center justify-between text-[10px] font-bold"
+          style={{ borderTop: "1.5px solid var(--recent-border)", color: "var(--sub-accent)" }}
+        >
           <div className="flex items-center gap-1">
-            <Flame size={12} className="text-orange-500 animate-pulse" />
-            <span>TOTAL SPINS: {spinHistory.length}</span>
+            <History size={11} />
+            <span>{filteredHistory.length} rounds in this tab</span>
           </div>
-          <span>UPDATES LIVE</span>
+          <span style={{ color: "#00c853" }}>● Live</span>
         </div>
       )}
-    </div>
+    </section>
   );
 }
