@@ -3,6 +3,7 @@
 import React from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { soundManager } from "@/components/shared/SoundManager";
+import { useRouter } from "next/navigation";
 
 // ─── Reusable sub-components ────────────────────────────────────────────────
 
@@ -153,6 +154,7 @@ export default function SettingsView() {
   } = useGameStore();
 
   const isDark = theme === "dark";
+  const router = useRouter();
 
   const handleToast = (msg: string) => {
     // Light haptic if available
@@ -241,12 +243,12 @@ export default function SettingsView() {
           <NavRow
             icon={<IconDoc />}
             label="Terms & Conditions"
-            onClick={() => { soundManager.playTick(); handleToast("Terms & Conditions"); }}
+            onClick={() => { soundManager.playTick(); router.push("/terms"); }}
           />
           <NavRow
             icon={<IconShield />}
             label="Privacy Policy"
-            onClick={() => { soundManager.playTick(); handleToast("Privacy Policy"); }}
+            onClick={() => { soundManager.playTick(); router.push("/privacy"); }}
           />
         </Section>
 

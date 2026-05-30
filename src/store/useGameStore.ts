@@ -48,6 +48,8 @@ interface GameState {
   // Navigation & Views
   currentView: string;
   setView: (view: string) => void;
+  menuOpen: boolean;
+  setMenuOpen: (open: boolean) => void;
   
   // Dark/Light Theme
   theme: "light" | "dark";
@@ -69,7 +71,9 @@ interface GameState {
   // Group Management
   groups: Group[];
   activeGroupId: string;
+  setActiveGroupId: (id: string) => void;
   createGroup: (name: string, members: string[], emoji?: string) => void;
+  deleteGroup: (id: string) => void;
   joinGroup: (code: string) => boolean;
 
   // Meme Generator Text
@@ -86,6 +90,7 @@ interface GameState {
   // Actions
   addParticipant: (name: string) => void;
   removeParticipant: (index: number) => void;
+  editParticipant: (index: number, name: string) => void;
   clearParticipants: () => void;
   setSpinning: (spinning: boolean) => void;
   setWinner: (winner: string | null, index: number | null, gameType?: "spin" | "dice") => void;
@@ -105,6 +110,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   // Navigation & Views
   currentView: "splash",
   setView: (view) => set({ currentView: view }),
+  menuOpen: false,
+  setMenuOpen: (open) => set({ menuOpen: open }),
 
   // Dark/Light Theme
   theme: "light",
@@ -146,6 +153,12 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   // Group Management
   activeGroupId: "mock-group-1",
+  setActiveGroupId: (id) => {
+    const group = get().groups.find((g) => g.id === id);
+    if (group) {
+      set({ activeGroupId: id, participants: group.members });
+    }
+  },
   groups: [
     {
       id: "mock-group-1",
@@ -192,6 +205,20 @@ export const useGameStore = create<GameState>((set, get) => ({
       activeGroupId: newGroup.id,
       participants: members,
     }));
+  },
+
+  deleteGroup: (id) => {
+    set((state) => {
+      const remaining = state.groups.filter((g) => g.id !== id);
+      if (remaining.length === 0) return state;
+      const nextActive = state.activeGroupId === id ? remaining[0].id : state.activeGroupId;
+      const activeGroup = remaining.find((g) => g.id === nextActive);
+      return {
+        groups: remaining,
+        activeGroupId: nextActive,
+        participants: activeGroup?.members ?? [],
+      };
+    });
   },
   joinGroup: (code) => {
     // Mock successful group join
@@ -244,12 +271,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     });
   },
   achievements: [
-    { id: "1", title: "First Blood", desc: "Win your first round", icon: "🏅", unlocked: true, progress: "1/1" },
-    { id: "2", title: "Wallet Killer", desc: "Pay 10 times", icon: "💀", unlocked: true, progress: "10/10" },
-    { id: "3", title: "Unlucky King", desc: "Pay 25 times", icon: "👑", unlocked: false, progress: "12/25" },
-    { id: "4", title: "Lucky One", desc: "Escape 10 times", icon: "🍀", unlocked: true, progress: "10/10" },
-    { id: "5", title: "Roast Master", desc: "Roast 5 friends", icon: "🔥", unlocked: true, progress: "5/5" },
-    { id: "6", title: "Group Master", desc: "Create 5 groups", icon: "👥", unlocked: false, progress: "3/5" }
+    { id: "1", title: "First Blood", desc: "Win your first round", icon: "/icons/First Blood.svg", unlocked: true, progress: "1/1" },
+    { id: "2", title: "Wallet Killer", desc: "Pay 10 times", icon: "/icons/Wallet Killer.svg", unlocked: true, progress: "10/10" },
+    { id: "3", title: "Unlucky King", desc: "Pay 25 times", icon: "/icons/Unlucky King.svg", unlocked: false, progress: "12/25" },
+    { id: "4", title: "Lucky One", desc: "Escape 10 times", icon: "/icons/Lucky One.svg", unlocked: true, progress: "10/10" },
+    { id: "5", title: "Roast Master", desc: "Roast 5 friends", icon: "/icons/Roast Master.svg", unlocked: true, progress: "5/5" },
+    { id: "6", title: "Group Master", desc: "Create 5 groups", icon: "/icons/Group Master.svg", unlocked: false, progress: "3/5" }
   ],
 
   // Participant Management
@@ -276,6 +303,25 @@ export const useGameStore = create<GameState>((set, get) => ({
     set((state) => {
       const updated = [...state.participants];
       updated.splice(index, 1);
+      const updatedGroups = state.groups.map((g) => {
+        if (g.id === state.activeGroupId) {
+          return { ...g, members: updated };
+        }
+        return g;
+      });
+      return {
+        participants: updated,
+        groups: updatedGroups,
+      };
+    });
+  },
+
+  editParticipant: (index, name) => {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    set((state) => {
+      const updated = [...state.participants];
+      updated[index] = trimmed;
       const updatedGroups = state.groups.map((g) => {
         if (g.id === state.activeGroupId) {
           return { ...g, members: updated };

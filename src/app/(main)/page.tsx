@@ -40,6 +40,7 @@ export default function WhoPayAppRouter() {
     diceMode,
     groups,
     activeGroupId,
+    setActiveGroupId,
     createGroup,
     joinGroup,
     memeTopText,
@@ -54,6 +55,8 @@ export default function WhoPayAppRouter() {
     setVibrationEnabled,
     notificationsEnabled,
     setNotificationsEnabled,
+    spinHistory,
+    fetchHistory,
   } = useGameStore();
 
   const [newPlayerName, setNewPlayerName] = useState("");
@@ -148,7 +151,7 @@ export default function WhoPayAppRouter() {
     const tabs = [
       { icon: "🏠", label: "Home", view: "home" },
       { icon: "👥", label: "Groups", view: "group" },
-      { icon: "➕", label: "Add", view: "create-group" },
+      { icon: <Plus size={20} />, label: "Add", view: "create-group" },
       { icon: "🕐", label: "History", view: "history" },
       { icon: "👤", label: "Profile", view: "profile" },
     ];
@@ -178,8 +181,8 @@ export default function WhoPayAppRouter() {
                   className="absolute -top-0.5 w-8 h-0.5 rounded-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] shadow-[0_0_8px_rgba(124,58,237,0.5)]"
                 />
               )}
-              <span className={`text-xl transition-all ${isActive ? "scale-115" : "opacity-40"}`}>
-                {tab.icon}
+              <span className={`transition-all ${isActive ? "scale-115 text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-500"}`}>
+                <span className="text-xl">{tab.icon}</span>
               </span>
               <span
                 className="text-[9px] font-black mt-0.5 transition-colors"
@@ -275,16 +278,38 @@ export default function WhoPayAppRouter() {
       {renderHeader("Spin the Wheel")}
       <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto min-h-0">
         {/* Active group header */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          onClick={() => setView("group")}
-          className="px-4 py-2 rounded-full bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 text-xs font-black flex items-center gap-2 cursor-pointer shadow-[0_0_16px_rgba(124,58,237,0.1)] hover:shadow-[0_0_24px_rgba(124,58,237,0.2)] transition-all self-center"
-        >
-          <span>👥 {activeGroup.name}</span>
-          <span className="text-[10px] text-[#7c3aed]">({participants.length} members) ›</span>
-        </motion.div>
-
-        {/* Add Player Input */}
+        <div className="relative self-center">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            onClick={() => setShowGroupPicker(!showGroupPicker)}
+            className="px-4 py-2 rounded-full bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 text-xs font-black flex items-center gap-2 cursor-pointer shadow-[0_0_16px_rgba(124,58,237,0.1)] hover:shadow-[0_0_24px_rgba(124,58,237,0.2)] transition-all"
+          >
+            <span>👥 {activeGroup.name}</span>
+            <span className="text-[10px] text-[#7c3aed] flex items-center gap-1">({participants.length}) <svg className={`w-4 h-4 transition-transform duration-300 ease-in-out ${showGroupPicker ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3"/></svg></span>
+          </motion.div>
+          {showGroupPicker && (
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white dark:bg-[#12122a] rounded-2xl border border-[#7c3aed]/20 overflow-hidden shadow-xl z-50">
+              {groups.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => { setActiveGroupId(g.id); setShowGroupPicker(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-[#7c3aed]/5 ${
+                    g.id === activeGroupId ? "bg-[#7c3aed]/10" : ""
+                  }`}
+                >
+                  <span className="text-lg">{g.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-[var(--foreground)] truncate block">{g.name}</span>
+                    <span className="text-[10px] text-[#7c3aed]/50">{g.members.length} members</span>
+                  </div>
+                  {g.id === activeGroupId && (
+                    <svg className="w-4 h-4 text-[#7c3aed] flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -578,9 +603,39 @@ export default function WhoPayAppRouter() {
   );
 
   // 9. History Screen
+  const [historyTab, setHistoryTab] = useState<"spin" | "dice">("spin");
+  const [historyLoading, setHistoryLoading] = useState(false);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    await fetchHistory();
+    setHistoryLoading(false);
+  };
+
+  useEffect(() => { loadHistory(); }, []);
+
+  const AVATAR_COLORS = [
+    "#ff4081", "#2979ff", "#00c853", "#ff6d00",
+    "#6c3bff", "#00bcd4", "#f44336", "#ffd600",
+  ];
+
+  const getInitials = (name: string) =>
+    name.replace(/\p{Emoji}/gu, "").trim().split(" ").map((w) => w[0] ?? "").join("").slice(0, 2).toUpperCase() || "?";
+
+  const formatTime = (iso: string) => {
+    try { return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); }
+    catch { return "Just now"; }
+  };
+
+  const formatDate = (iso: string) => {
+    try { return new Date(iso).toLocaleDateString([], { month: "short", day: "numeric" }); }
+    catch { return ""; }
+  };
+
+  const filteredHistory = spinHistory.filter((s) => (s.type || "spin") === historyTab);
+
   const renderHistoryView = () => (
     <div className="flex-1 flex flex-col bg-[#faf8ff] dark:bg-[#0a0a1a] pb-16 relative">
-      {/* Header */}
       <header className="flex items-center justify-between px-6 py-8">
         <motion.button
           whileHover={{ scale: 1.1 }}
@@ -604,10 +659,8 @@ export default function WhoPayAppRouter() {
         </motion.button>
       </header>
 
-      {/* Content Area */}
       <section className="px-5 md:px-10 flex-1 pb-10">
         <div className="bg-white dark:bg-[#12122a]/80 rounded-[40px] md:rounded-[48px] border border-purple-50 dark:border-[#7c3aed]/20 p-6 md:p-10 min-h-[500px] flex flex-col transition-all shadow-[0_0_40px_rgba(168,85,247,0.05)]">
-          {/* History Meta */}
           <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
             <div className="flex items-center space-x-3 w-full sm:w-auto">
               <div className="w-12 h-12 bg-purple-50 dark:bg-[#7c3aed]/10 rounded-2xl flex items-center justify-center text-[#a855f7] shadow-sm border border-purple-100 dark:border-[#7c3aed]/20 shrink-0">
@@ -621,52 +674,126 @@ export default function WhoPayAppRouter() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => triggerToast("Refreshed!")}
+              onClick={loadHistory}
               className="flex items-center space-x-2 bg-purple-50 dark:bg-[#7c3aed]/10 px-5 py-2.5 rounded-2xl text-[#a855f7] hover:bg-purple-100 dark:hover:bg-[#7c3aed]/20 transition-colors w-full sm:w-auto justify-center group"
             >
-              <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
-              <span className="text-sm font-bold">Refresh</span>
+              <RefreshCw size={16} className={`transition-transform duration-500 ${historyLoading ? "animate-spin" : "group-hover:rotate-180"}`} />
+              <span className="text-sm font-bold">{historyLoading ? "Loading..." : "Refresh"}</span>
             </motion.button>
           </div>
 
-          {/* Toggle Tabs */}
-          <div className="bg-purple-50/50 dark:bg-[#1a1a3e]/50 p-1.5 rounded-[32px] flex items-center mb-12 max-w-xl mx-auto w-full">
-            <button className="flex-1 bg-gradient-to-r from-[#a855f7] to-[#9333ea] text-white py-4 px-6 rounded-[28px] flex items-center justify-center space-x-2 shadow-lg shadow-purple-200 dark:shadow-[#7c3aed]/30 transition-transform active:scale-95">
+          <div className="bg-purple-50/50 dark:bg-[#1a1a3e]/50 p-1.5 rounded-[32px] flex items-center mb-8 max-w-xl mx-auto w-full">
+            <button
+              onClick={() => setHistoryTab("spin")}
+              className={`flex-1 py-4 px-6 rounded-[28px] flex items-center justify-center space-x-2 transition-all active:scale-95 ${
+                historyTab === "spin"
+                  ? "bg-gradient-to-r from-[#a855f7] to-[#9333ea] text-white shadow-lg shadow-purple-200 dark:shadow-[#7c3aed]/30"
+                  : "text-slate-400 hover:bg-white/50 dark:hover:bg-white/5"
+              }`}
+            >
               <span className="text-xl">🎡</span>
               <span className="font-bold text-sm md:text-base">Spin Wheel</span>
             </button>
-            <button className="flex-1 text-slate-400 py-4 px-6 rounded-[28px] flex items-center justify-center space-x-2 hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
+            <button
+              onClick={() => setHistoryTab("dice")}
+              className={`flex-1 py-4 px-6 rounded-[28px] flex items-center justify-center space-x-2 transition-all active:scale-95 ${
+                historyTab === "dice"
+                  ? "bg-gradient-to-r from-[#a855f7] to-[#9333ea] text-white shadow-lg shadow-purple-200 dark:shadow-[#7c3aed]/30"
+                  : "text-slate-400 hover:bg-white/50 dark:hover:bg-white/5"
+              }`}
+            >
               <span className="text-xl opacity-70">🎲</span>
               <span className="font-bold text-sm md:text-base">Dice Rolls</span>
             </button>
           </div>
 
-          {/* Empty State */}
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-4 max-w-md mx-auto w-full">
-            <motion.div
-              animate={{ opacity: [0.7, 1, 0.7] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="w-20 h-20 rounded-full bg-slate-50 dark:bg-[#1a1a3e]/50 border-2 border-dashed border-slate-200 dark:border-[#7c3aed]/20 flex items-center justify-center mb-8"
-            >
-              <AlertTriangle size={40} className="text-slate-300 dark:text-white/30" />
-            </motion.div>
-            <h3 className="text-slate-800 dark:text-white font-bold text-xl mb-3">No rounds yet!</h3>
-            <p className="text-slate-400 text-sm md:text-base font-medium leading-relaxed">
-              Your recent activity will appear here once you start playing. Spin the wheel to get started.
-            </p>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => { soundManager.playTick(); setView("home"); }}
-              className="mt-8 px-8 py-3.5 bg-[#a855f7] text-white font-bold rounded-2xl shadow-lg shadow-purple-100 dark:shadow-[#7c3aed]/30 transition-transform"
-            >
-              Try a spin now
-            </motion.button>
+          <div className="flex-1 space-y-2 overflow-y-auto max-h-[400px] pr-1">
+            {filteredHistory.length === 0 ? (
+              <div className="flex flex-col items-center justify-center text-center px-4 max-w-md mx-auto w-full py-16">
+                <motion.div
+                  animate={{ opacity: [0.7, 1, 0.7] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                  className="w-20 h-20 rounded-full bg-slate-50 dark:bg-[#1a1a3e]/50 border-2 border-dashed border-slate-200 dark:border-[#7c3aed]/20 flex items-center justify-center mb-8"
+                >
+                  <AlertTriangle size={40} className="text-slate-300 dark:text-white/30" />
+                </motion.div>
+                <h3 className="text-slate-800 dark:text-white font-bold text-xl mb-3">No rounds yet!</h3>
+                <p className="text-slate-400 text-sm md:text-base font-medium leading-relaxed">
+                  {historyTab === "spin"
+                    ? "Your recent activity will appear here once you start playing. Spin the wheel to get started."
+                    : "Roll the dice to see your history here."}
+                </p>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => { soundManager.playTick(); setView("home"); }}
+                  className="mt-8 px-8 py-3.5 bg-[#a855f7] text-white font-bold rounded-2xl shadow-lg shadow-purple-100 dark:shadow-[#7c3aed]/30 transition-transform"
+                >
+                  Try a spin now
+                </motion.button>
+              </div>
+            ) : (
+              <AnimatePresence mode="popLayout">
+                {filteredHistory.map((spin, idx) => {
+                  const color = AVATAR_COLORS[idx % AVATAR_COLORS.length];
+                  const initials = getInitials(spin.winner);
+                  return (
+                    <motion.div
+                      key={spin.id || idx}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.18, delay: idx * 0.04 }}
+                      className="flex items-center gap-3 p-4 rounded-2xl bg-purple-50/30 dark:bg-[#1a1a3e]/30 border border-purple-100/50 dark:border-[#7c3aed]/10"
+                    >
+                      <div
+                        className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                        style={{ background: color }}
+                      >
+                        {initials}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-black text-sm text-slate-800 dark:text-white truncate">
+                            {spin.winner}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            spin.type === "dice"
+                              ? "bg-orange-100 dark:bg-orange-900/30 text-orange-500"
+                              : "bg-green-100 dark:bg-green-900/30 text-green-500"
+                          }`}>
+                            {spin.type === "dice" ? "🎲 Dice" : "Paid"}
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-semibold text-slate-400 truncate max-w-[240px]">
+                          {spin.type === "dice" && spin.dice1 !== undefined && spin.dice2 !== undefined
+                            ? `Rolled ${spin.dice1} + ${spin.dice2} = ${spin.dice1 + spin.dice2} · (${spin.participants.slice(0, 3).join(", ")}${spin.participants.length > 3 ? "…" : ""})`
+                            : spin.participants.slice(0, 4).join(", ")}
+                        </p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-[10px] font-bold text-slate-400">{formatTime(spin.createdAt)}</p>
+                        <p className="text-[9px] font-semibold text-slate-300">{formatDate(spin.createdAt)}</p>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </AnimatePresence>
+            )}
           </div>
+
+          {filteredHistory.length > 0 && (
+            <div className="mt-4 pt-4 flex items-center justify-between text-[10px] font-bold text-slate-400 border-t border-purple-100/50 dark:border-[#7c3aed]/10">
+              <div className="flex items-center gap-1">
+                <History size={11} />
+                <span>{filteredHistory.length} rounds</span>
+              </div>
+              <span className="text-[#00c853]">● Live</span>
+            </div>
+          )}
         </div>
       </section>
 
-      {/* Decorative Bottom Shape */}
       <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-purple-50/50 to-transparent dark:from-[#7c3aed]/5 -z-10 opacity-60 pointer-events-none" />
     </div>
   );
@@ -972,13 +1099,7 @@ export default function WhoPayAppRouter() {
                   ✓
                 </motion.span>
               )}
-              <div 
-                className={`w-11 h-11 rounded-full flex items-center justify-center text-xl shadow mb-2 ${
-                  ach.unlocked ? "bg-gradient-to-br from-[#ffd600]/20 to-[#ffab00]/20 border border-[#ffd600]/30" : "bg-white/50 dark:bg-[#1a1a3e]/50 border border-[#7c3aed]/10"
-                }`}
-              >
-                {ach.icon}
-              </div>
+              <img src={ach.icon} alt={ach.title} className="w-24 h-24 object-contain mb-2" />
               <h4 className="text-[11px] font-black text-[var(--foreground)] truncate w-full">{ach.title}</h4>
               <p className="text-[8px] text-[#7c3aed]/50 font-semibold mt-0.5 leading-relaxed">{ach.desc}</p>
               <span className="text-[9px] font-black text-[#7c3aed] mt-2 bg-[#7c3aed]/5 px-2 py-0.5 rounded border border-[#7c3aed]/20">
@@ -992,74 +1113,142 @@ export default function WhoPayAppRouter() {
   );
 
   // 13. Create Group Screen
+  const [customMemberInput, setCustomMemberInput] = useState("");
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
+
+  const handleAddCustomMember = () => {
+    const name = customMemberInput.trim();
+    if (!name) return;
+    if (name.length > 15) { triggerToast("Name too long (max 15)!"); return; }
+    if (newGroupMembers.includes(name)) { triggerToast("Already added!"); return; }
+    setNewGroupMembers([...newGroupMembers, name]);
+    setCustomMemberInput("");
+  };
+
   const renderCreateGroupView = () => (
     <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a]">
       {renderHeader("Create Group 🎨")}
-      <div className="flex-1 p-5 space-y-4 overflow-y-auto">
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-[#7c3aed]/60 uppercase">Group Name</label>
-          <input
-            type="text"
-            value={newGroupName}
-            onChange={(e) => setNewGroupName(e.target.value)}
-            placeholder="Weekend Squad 😎"
-            className="w-full p-3 border border-[#7c3aed]/20 rounded-2xl text-xs font-bold bg-white/70 dark:bg-[#12122a]/80 backdrop-blur text-[var(--foreground)] outline-none focus:border-[#7c3aed]/50 focus:shadow-[0_0_16px_rgba(124,58,237,0.1)] transition-all"
-          />
-        </div>
+      <div className="flex-1 p-5 space-y-5 overflow-y-auto">
 
-        {/* Group Vibe Selector */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-[#7c3aed]/60 uppercase">Group Vibe Emoji</label>
-          <div className="grid grid-cols-5 gap-2 select-none">
-            {["🎉", "🍲", "😎", "🍻", "🍕"].map((vibe) => (
-              <motion.button
-                key={vibe}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => setVibeSelected(vibe)}
-                className={`p-3 rounded-xl text-xl flex items-center justify-center transition-all ${
-                  vibeSelected === vibe
-                    ? "bg-gradient-to-br from-[#7c3aed]/20 to-[#ec4899]/20 border border-[#7c3aed] shadow-[0_0_16px_rgba(124,58,237,0.2)]"
-                    : "bg-white/70 dark:bg-[#12122a]/80 backdrop-blur border border-[#7c3aed]/20"
-                }`}
-              >
-                {vibe}
-              </motion.button>
-            ))}
+        {/* Group Name */}
+        <div className="bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl rounded-2xl border border-[#7c3aed]/20 p-4 space-y-4 shadow-[0_0_20px_rgba(124,58,237,0.05)]">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-[#7c3aed]/60 uppercase tracking-wider">Group Name</label>
+            <input
+              type="text"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              placeholder="e.g. Weekend Squad"
+              className="w-full p-3.5 border border-[#7c3aed]/20 rounded-xl text-sm font-bold bg-white/80 dark:bg-[#1a1a3e]/80 text-[var(--foreground)] outline-none focus:border-[#7c3aed]/50 focus:shadow-[0_0_16px_rgba(124,58,237,0.1)] transition-all"
+            />
           </div>
-        </div>
 
-        {/* Members addition */}
-        <div className="flex flex-col gap-1.5">
-          <label className="text-[10px] font-bold text-[#7c3aed]/60 uppercase">Mock Members</label>
-          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-            {["Alex 😎", "Jamie 🌟", "Sam 🎉", "Taylor 🔥", "Morgan 💫", "Casey 🦄"].map((m) => {
-              const isAdded = newGroupMembers.includes(m);
-              return (
-                <motion.div
-                  key={m}
-                  whileHover={{ scale: 1.01 }}
-                  onClick={() => {
-                    if (isAdded) {
-                      setNewGroupMembers(newGroupMembers.filter((item) => item !== m));
-                    } else {
-                      setNewGroupMembers([...newGroupMembers, m]);
-                    }
-                  }}
-                  className={`p-2.5 rounded-xl border flex justify-between items-center cursor-pointer text-xs font-bold transition-all ${
-                    isAdded
-                      ? "border-[#00c853] bg-[#00c853]/5 text-[#00c853] shadow-[0_0_12px_rgba(0,200,83,0.1)]"
-                      : "bg-white/70 dark:bg-[#12122a]/80 backdrop-blur border border-[#7c3aed]/20 text-[var(--foreground)]"
+          {/* Group Vibe */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[10px] font-bold text-[#7c3aed]/60 uppercase tracking-wider">Group Vibe</label>
+            <div className="grid grid-cols-5 gap-2 select-none">
+              {["🎉", "🍲", "😎", "🍻", "🍕"].map((vibe) => (
+                <motion.button
+                  key={vibe}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => setVibeSelected(vibe)}
+                  className={`p-3 rounded-xl text-2xl flex items-center justify-center transition-all ${
+                    vibeSelected === vibe
+                      ? "bg-gradient-to-br from-[#7c3aed]/20 to-[#ec4899]/20 border-2 border-[#7c3aed] shadow-[0_0_16px_rgba(124,58,237,0.2)] scale-105"
+                      : "bg-white/80 dark:bg-[#1a1a3e]/80 border border-[#7c3aed]/20 hover:border-[#7c3aed]/40"
                   }`}
                 >
-                  <span>{m}</span>
-                  <span>{isAdded ? "✓ Added" : "+ Add"}</span>
-                </motion.div>
-              );
-            })}
+                  {vibe}
+                </motion.button>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Add Members */}
+        <div className="bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl rounded-2xl border border-[#7c3aed]/20 p-4 space-y-3 shadow-[0_0_20px_rgba(124,58,237,0.05)]">
+          <label className="text-[10px] font-bold text-[#7c3aed]/60 uppercase tracking-wider">Add Members</label>
+
+          {/* Custom name input */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customMemberInput}
+              onChange={(e) => setCustomMemberInput(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") handleAddCustomMember(); }}
+              placeholder="Enter name..."
+              maxLength={15}
+              className="flex-1 p-3 border border-[#7c3aed]/20 rounded-xl text-sm font-semibold bg-white/80 dark:bg-[#1a1a3e]/80 text-[var(--foreground)] outline-none focus:border-[#7c3aed]/50 transition-all"
+            />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleAddCustomMember}
+              className="px-4 py-3 rounded-xl bg-[#7c3aed] text-white font-black text-sm shadow-[0_4px_12px_rgba(124,58,237,0.3)]"
+            >
+              Add
+            </motion.button>
+          </div>
+
+          {/* Quick select from suggestions */}
+          <div>
+            <p className="text-[9px] font-bold text-[#7c3aed]/40 uppercase tracking-wider mb-2">Quick Select</p>
+            <div className="flex flex-wrap gap-1.5">
+              {["Alex 😎", "Jamie 🌟", "Sam 🎉", "Taylor 🔥", "Morgan 💫", "Casey 🦄"].map((m) => {
+                const isAdded = newGroupMembers.includes(m);
+                return (
+                  <motion.button
+                    key={m}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      if (isAdded) {
+                        setNewGroupMembers(newGroupMembers.filter((item) => item !== m));
+                      } else {
+                        setNewGroupMembers([...newGroupMembers, m]);
+                      }
+                    }}
+                    className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all ${
+                      isAdded
+                        ? "bg-[#00c853]/10 border-[#00c853] text-[#00c853]"
+                        : "bg-white/80 dark:bg-[#1a1a3e]/80 border-[#7c3aed]/20 text-[var(--foreground)] hover:border-[#7c3aed]/40"
+                    }`}
+                  >
+                    {m} {isAdded ? "✓" : "+"}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Selected members list */}
+          {newGroupMembers.length > 0 && (
+            <div>
+              <p className="text-[9px] font-bold text-[#7c3aed]/40 uppercase tracking-wider mb-2">
+                Selected ({newGroupMembers.length})
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {newGroupMembers.map((m) => (
+                  <div
+                    key={m}
+                    className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#7c3aed]/10 border border-[#7c3aed]/20 text-[11px] font-bold text-[#7c3aed]"
+                  >
+                    {m}
+                    <button
+                      onClick={() => setNewGroupMembers(newGroupMembers.filter((item) => item !== m))}
+                      className="ml-0.5 w-4 h-4 rounded-full bg-[#7c3aed]/20 hover:bg-red-400/30 flex items-center justify-center transition-colors"
+                    >
+                      <svg className="w-2.5 h-2.5 text-[#7c3aed]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeWidth="3"/></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Create Button */}
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
@@ -1074,11 +1263,15 @@ export default function WhoPayAppRouter() {
             }
             createGroup(newGroupName.trim(), newGroupMembers, vibeSelected);
             triggerToast("Created new group!");
+            setNewGroupMembers([]);
+            setNewGroupName("");
+            setVibeSelected("🎉");
             setView("group");
           }}
-          className="w-full justify-center py-3.5 rounded-2xl bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white font-black text-xs shadow-[0_0_30px_rgba(124,58,237,0.3)] mt-4 flex items-center gap-2"
+          className="w-full justify-center py-4 rounded-2xl bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white font-black text-sm shadow-[0_0_30px_rgba(124,58,237,0.3)] flex items-center gap-2 tracking-wide"
         >
-          Create Group ▷
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14" strokeLinecap="round" strokeWidth="3"/></svg>
+          Create Group
         </motion.button>
       </div>
     </div>
@@ -1318,7 +1511,7 @@ export default function WhoPayAppRouter() {
       </div>
 
       {/* Bottom Nav (mobile only) */}
-      {currentView !== "home" && <MobileNav />}
+      <MobileNav />
     </div>
   );
 }

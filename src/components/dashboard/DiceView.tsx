@@ -4,15 +4,15 @@ import { useState, useEffect, useRef } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { soundManager } from "@/components/shared/SoundManager";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Volume2, VolumeX, Plus, X, Info, Users, Dices } from "lucide-react";
+import { ArrowLeft, Volume2, VolumeX, Plus, X, Users, Dices } from "lucide-react";
 
 const FACE_COLORS = [
-  { bg: "from-[#ff6b6b]/40 to-[#ee5a24]/30", border: "border-[#ff6b6b]/50", dot: "bg-[#ff6b6b]" },
-  { bg: "from-[#4fc3f7]/40 to-[#0288d1]/30", border: "border-[#4fc3f7]/50", dot: "bg-[#4fc3f7]" },
-  { bg: "from-[#69f0ae]/40 to-[#00c853]/30", border: "border-[#69f0ae]/50", dot: "bg-[#69f0ae]" },
-  { bg: "from-[#ffd740]/40 to-[#ffab00]/30", border: "border-[#ffd740]/50", dot: "bg-[#ffd740]" },
-  { bg: "from-[#b388ff]/40 to-[#7c3aed]/30", border: "border-[#b388ff]/50", dot: "bg-[#b388ff]" },
-  { bg: "from-[#ff80ab]/40 to-[#e91e63]/30", border: "border-[#ff80ab]/50", dot: "bg-[#ff80ab]" },
+  { bg: "from-white to-white", border: "border-black/20", dot: "bg-black" },
+  { bg: "from-white to-white", border: "border-black/20", dot: "bg-black" },
+  { bg: "from-white to-white", border: "border-black/20", dot: "bg-black" },
+  { bg: "from-white to-white", border: "border-black/20", dot: "bg-black" },
+  { bg: "from-white to-white", border: "border-black/20", dot: "bg-black" },
+  { bg: "from-white to-white", border: "border-black/20", dot: "bg-black" },
 ];
 
 // Dot positions for each face (1-6) on a 3x3 grid
@@ -28,36 +28,29 @@ const DOT_POSITIONS: Record<number, number[]> = {
 function renderFaceDots(val: number) {
   const dots = DOT_POSITIONS[val] ?? [];
   return (
-    <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-8 h-8 absolute top-1.5 left-1.5 opacity-40">
+    <div className="grid grid-cols-3 grid-rows-3 gap-0.5 w-8 h-8 absolute top-1.5 left-1.5 opacity-15">
       {Array.from({ length: 9 }).map((_, i) => (
         <div key={i} className="flex items-center justify-center">
-          {dots.includes(i) && <div className="w-1.5 h-1.5 rounded-full bg-slate-500 dark:bg-slate-300" />}
+          {dots.includes(i) && <div className="w-1.5 h-1.5 rounded-full bg-black" />}
         </div>
       ))}
     </div>
   );
 }
 
-// Helper to render the custom face content (name instead of dot)
+// Helper to render face with participant name
 function renderFaceContent(val: number, name: string) {
   const isLong = name.length > 10;
   const isVeryLong = name.length > 13;
   const fontSize = isVeryLong ? "text-[9px]" : isLong ? "text-[11px]" : "text-xs";
-  const colors = FACE_COLORS[(val - 1) % FACE_COLORS.length];
-  
+
   return (
-    <div className={`w-full h-full flex flex-col items-center justify-center p-1.5 text-center select-none bg-gradient-to-br ${colors.bg} rounded-[5px] border ${colors.border} shadow-[inset_0_1.5px_3px_rgba(0,0,0,0.03)] relative overflow-hidden`}>
-      {renderFaceDots(val)}
-      <span className="text-[7px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-0.5 leading-none z-10">
+    <div className="w-full h-full flex flex-col items-center justify-center text-center select-none bg-white relative overflow-hidden">
+      <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none z-10">
         #{val}
       </span>
-      <div 
-        className={`${fontSize} font-black text-slate-800 dark:text-white uppercase tracking-wide leading-tight break-all line-clamp-2 px-1 z-10 drop-shadow-sm`}
-      >
+      <div className={`${fontSize} font-black text-slate-800 uppercase tracking-wide leading-tight break-all line-clamp-2 px-1 z-10`}>
         {name}
-      </div>
-      <div className="absolute bottom-1 right-1.5 text-[16px] opacity-20 select-none leading-none">
-        {["⚀","⚁","⚂","⚃","⚄","⚅"][val - 1]}
       </div>
     </div>
   );
@@ -135,12 +128,15 @@ export default function DiceView() {
     setView,
     activeGroupId,
     groups,
+    setActiveGroupId,
   } = useGameStore();
 
   const [rolling, setRolling] = useState(false);
   const [settling, setSettling] = useState(false);
   const [faceNames, setFaceNames] = useState<string[]>([]);
   const [spinCount, setSpinCount] = useState(1);
+  const [slowMo, setSlowMo] = useState(false);
+  const [showGroupPicker, setShowGroupPicker] = useState(false);
 
   // Rotation states (X, Y, Z)
   const [rot1, setRot1] = useState({ x: 0, y: 0, z: 0 });
@@ -187,22 +183,25 @@ export default function DiceView() {
   const rollDice = async () => {
     if (rolling || isSpinning || participants.length < 2) return;
 
+    const sp = slowMo ? 2.5 : 1;
+    const spSuffix = slowMo ? "s" : "";
+
     setRolling(true);
     setSettling(false);
     if (soundEnabled) soundManager.playTick();
 
-    // Increment spins count
     const nextSpin = spinCount + 1;
     setSpinCount(nextSpin);
 
-    // Initial wild multi-axis tumbling spin (X, Y, Z)
+    document.documentElement.style.setProperty("--dice-transition-duration", slowMo ? "6s" : "2.8s");
+    document.documentElement.style.setProperty("--dice-tumble-duration", slowMo ? "1.2s" : "0.45s");
+
     setRot1({
       x: nextSpin * 1440 + Math.floor(Math.random() * 360) + 180,
       y: nextSpin * 1440 + Math.floor(Math.random() * 360) + 180,
       z: nextSpin * 1440 + Math.floor(Math.random() * 360) + 90,
     });
 
-    // Call store trigger
     const result = await triggerDiceRoll();
     if (!result) {
       setRolling(false);
@@ -211,15 +210,11 @@ export default function DiceView() {
     }
 
     const { selectedIndex, winner: winnerName, dice1 } = result;
-    const rollDuration = 1800;
+    const rollDuration = Math.round(1800 * sp);
 
-    // Dynamically align faceNames so that the winning face (dice1) holds the selected winner name
     const nextFaces = [...faceNames];
-    
-    // Set winning face (dice1 is 1-based, so index is dice1 - 1)
     nextFaces[dice1 - 1] = participants[selectedIndex];
 
-    // Distribute remaining participants to the other 5 faces
     let pool = participants.filter((_, idx) => idx !== selectedIndex);
     if (pool.length === 0) pool = [participants[selectedIndex]];
 
@@ -230,7 +225,6 @@ export default function DiceView() {
     }
     setFaceNames(nextFaces);
 
-    // Play tick sounds rapidly if enabled
     let tickCount = 0;
     if (soundEnabled) {
       tickRef.current = window.setInterval(() => {
@@ -239,21 +233,18 @@ export default function DiceView() {
         if (tickCount >= 14 && tickRef.current) {
           clearInterval(tickRef.current);
         }
-      }, 100);
+      }, Math.round(100 * sp));
     }
 
-    // Settle on final target rotations midway through
     setTimeout(() => {
       setRot1(getFaceRotation(dice1, nextSpin));
-    }, 1000);
+    }, Math.round(1000 * sp));
 
-    // Remove rolling class early so transition takes over for slow settle
     setTimeout(() => {
       setRolling(false);
       setSettling(true);
-    }, 1400);
+    }, Math.round(1400 * sp));
 
-    // Roll complete - show result
     setTimeout(() => {
       if (tickRef.current) clearInterval(tickRef.current);
 
@@ -263,7 +254,7 @@ export default function DiceView() {
         setWinner(winnerName, selectedIndex, "dice");
         setSpinning(false);
         setSettling(false);
-      }, 1200);
+      }, Math.round(1200 * sp));
     }, rollDuration + 60);
   };
 
@@ -277,71 +268,61 @@ export default function DiceView() {
         .dice-scene-classic {
           width: 170px;
           height: 170px;
-          perspective: 700px;
+          perspective: 900px;
           display: inline-block;
-          filter: drop-shadow(0 0 40px rgba(124,58,237,0.2));
+          filter: drop-shadow(0 15px 40px rgba(0,0,0,0.25)) drop-shadow(0 5px 15px rgba(0,0,0,0.1));
+        }
+        .dark .dice-scene-classic {
+          filter: drop-shadow(0 15px 40px rgba(0,0,0,0.5)) drop-shadow(0 5px 15px rgba(0,0,0,0.2));
         }
         .dice-cube-classic {
           width: 100%;
           height: 100%;
           position: relative;
           transform-style: preserve-3d;
-          transition: transform 2.8s cubic-bezier(0.05, 0.75, 0.15, 0.95);
+          transition: transform var(--dice-transition-duration, 2.8s) cubic-bezier(0.05, 0.85, 0.08, 1);
+          background: #e8e8e8;
+          box-shadow: 
+            0 0 0 1px rgba(0,0,0,0.08),
+            inset 0 0 30px rgba(0,0,0,0.06);
         }
         .dice-cube-classic.idle {
           animation: idleSpin 10s ease-in-out infinite;
         }
         @keyframes idleSpin {
-          0% { transform: rotateX(-10deg) rotateY(0deg) rotateZ(0deg); }
-          25% { transform: rotateX(-15deg) rotateY(90deg) rotateZ(5deg); }
-          50% { transform: rotateX(-5deg) rotateY(180deg) rotateZ(-5deg); }
-          75% { transform: rotateX(-15deg) rotateY(270deg) rotateZ(5deg); }
-          100% { transform: rotateX(-10deg) rotateY(360deg) rotateZ(0deg); }
+          0% { transform: rotateX(-15deg) rotateY(0deg) rotateZ(0deg); }
+          25% { transform: rotateX(-20deg) rotateY(90deg) rotateZ(5deg); }
+          50% { transform: rotateX(-10deg) rotateY(180deg) rotateZ(-5deg); }
+          75% { transform: rotateX(-20deg) rotateY(270deg) rotateZ(5deg); }
+          100% { transform: rotateX(-15deg) rotateY(360deg) rotateZ(0deg); }
         }
         .dice-cube-face-classic {
           position: absolute;
           width: 170px;
           height: 170px;
-          border-radius: 8px;
-          background: linear-gradient(145deg, rgba(255,255,255,0.9), rgba(240,238,255,0.7));
-          backdrop-filter: blur(4px);
-          border: 3px solid #1a1a2e;
+          background: linear-gradient(145deg, #ffffff 0%, #f5f5f5 100%);
+          border: 2px solid #1a1a2e;
           box-shadow: 
-            inset 0 -8px 20px rgba(124, 58, 237, 0.08),
-            inset 0 8px 20px rgba(255, 255, 255, 0.7),
-            0 12px 40px rgba(124, 58, 237, 0.1);
+            inset 0 -8px 16px rgba(0,0,0,0.06),
+            inset 0 8px 16px rgba(255,255,255,0.9);
           display: flex;
-          flex-direction: column;
-          padding: 12px;
+          padding: 0;
           backface-visibility: hidden;
           transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
         }
-        .dice-cube-face-classic::before {
-          content: '';
-          position: absolute;
-          top: 6px;
-          left: 12px;
-          right: 12px;
-          height: 35%;
-          background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
-          border-radius: 20px;
-          pointer-events: none;
-        }
         .dark .dice-cube-face-classic {
-          background: linear-gradient(145deg, rgba(30,30,74,0.9), rgba(18,18,42,0.7));
-          border-color: rgba(124, 58, 237, 0.3);
+          background: linear-gradient(145deg, #f8f8f8 0%, #e8e8e8 100%);
         }
         .dice-cube-classic.rolling .dice-cube-face-classic {
-          background: linear-gradient(135deg, rgba(124,58,237,0.6), rgba(236,72,153,0.6));
-          backdrop-filter: blur(8px);
-          border-color: rgba(250,204,21,0.5);
-          box-shadow: 0 0 50px rgba(124,58,237,0.3), inset 0 -8px 20px rgba(0,0,0,0.1);
+          background: #e0e0e0;
+          border-color: #333;
+          box-shadow: 0 0 30px rgba(0,0,0,0.2);
         }
         .dark .dice-cube-classic.rolling .dice-cube-face-classic {
-          background: linear-gradient(135deg, rgba(124,58,237,0.7), rgba(236,72,153,0.7));
+          background: #d0d0d0;
         }
         .dice-cube-classic.rolling {
-          animation: boxJellyTumble 0.45s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+          animation: boxJellyTumble var(--dice-tumble-duration, 0.45s) cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
         }
         @keyframes boxJellyTumble {
           0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1,1); }
@@ -405,13 +386,13 @@ export default function DiceView() {
           position: absolute;
           width: 340px;
           height: 340px;
-          background: radial-gradient(circle, rgba(124, 58, 237, 0.2) 0%, rgba(236, 72, 153, 0.08) 40%, transparent 68%);
+          background: radial-gradient(circle, rgba(0,0,0,0.06) 0%, transparent 60%);
           border-radius: 50%;
           z-index: 0;
           animation: pulseGlow 3s ease-in-out infinite;
         }
         .dark .glow-halo {
-          background: radial-gradient(circle, rgba(124, 58, 237, 0.3) 0%, rgba(236, 72, 153, 0.12) 40%, transparent 68%);
+          background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 60%);
         }
 
         .dice-wrapper-glow {
@@ -432,13 +413,10 @@ export default function DiceView() {
           <ArrowLeft size={18} strokeWidth={3} />
         </button>
 
-        <div className="text-center flex-1 mx-3">
-          <h1 className="text-xl font-black uppercase tracking-wider text-[#1D2433] dark:text-white leading-none mb-1">
+        <div className="text-center flex-1 mx-1">
+          <h1 className="text-sm md:text-xl font-black uppercase tracking-wider text-[#1D2433] dark:text-white leading-none truncate">
             Roll the Dice
           </h1>
-          <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
-            Let the dice decide who pays! 🎲
-          </p>
         </div>
 
         <button
@@ -449,25 +427,56 @@ export default function DiceView() {
           className="flex items-center gap-1.5 px-3 py-2 rounded-[1rem] border-4 border-slate-100 dark:border-slate-800 bg-white dark:bg-[#12122a] shadow-sm font-black text-[10px] text-slate-700 dark:text-white uppercase tracking-wider hover:scale-[1.03] active:scale-[0.97] transition-all"
         >
           {soundEnabled ? (
-            <Volume2 size={13} className="text-purple-600 dark:text-purple-400" />
+            <Volume2 size={13} className="text-black dark:text-white" />
           ) : (
             <VolumeX size={13} className="text-slate-400" />
           )}
           <span>{soundEnabled ? "Sound" : "Muted"}</span>
         </button>
+        <button
+          onClick={() => { soundManager.playTick(); setSlowMo(!slowMo); }}
+          className={`flex items-center gap-1 px-3 py-2 rounded-[1rem] border-4 bg-white dark:bg-[#12122a] shadow-sm font-black text-[10px] uppercase tracking-wider hover:scale-[1.03] active:scale-[0.97] transition-all ${slowMo ? "border-black dark:border-white text-black dark:text-white" : "border-slate-100 dark:border-slate-800 text-slate-400"}`}
+        >
+          <span className={slowMo ? "opacity-100" : "opacity-40"}>🐢</span>
+          <span>Slow</span>
+        </button>
       </header>
       {/* END: Header Section */}
 
       <main className="flex-1 w-full max-w-md mx-auto px-5 pt-2 flex flex-col items-center gap-5">
-        {/* Active group header pill in Cartoon trim */}
-        <motion.div
-          whileHover={{ scale: 1.03 }}
-          onClick={() => { soundManager.playTick(); setView("group"); }}
-          className="px-4 py-2 rounded-full bg-white dark:bg-[#12122a] border-4 border-slate-100 dark:border-slate-800 text-xs font-black uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-[0_4px_12px_rgba(124,58,237,0.04)] select-none"
-        >
-          <span>👥 {activeGroup.name}</span>
-          <span className="text-[9px] text-purple-600 dark:text-[#a589ff]">({participants.length} members) ›</span>
-        </motion.div>
+        {/* Active group selector dropdown */}
+        <div className="relative">
+          <motion.div
+            whileHover={{ scale: 1.03 }}
+            onClick={() => setShowGroupPicker(!showGroupPicker)}
+            className="px-4 py-2 rounded-full bg-white dark:bg-[#12122a] border-4 border-slate-100 dark:border-slate-800 text-xs font-black uppercase tracking-wider flex items-center gap-2 cursor-pointer shadow-[0_4px_12px_rgba(124,58,237,0.04)] select-none"
+          >
+            <span>👥 {activeGroup.name}</span>
+            <span className="text-[9px] text-black/50 dark:text-white/50 flex items-center gap-1">({participants.length}) <svg className={`w-4 h-4 transition-transform duration-300 ease-in-out ${showGroupPicker ? "rotate-180" : ""}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3"/></svg></span>
+          </motion.div>
+          {showGroupPicker && (
+            <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-64 bg-white dark:bg-[#12122a] rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden shadow-xl z-50">
+              {groups.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => { soundManager.playTick(); setActiveGroupId(g.id); setShowGroupPicker(false); }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
+                    g.id === activeGroupId ? "bg-blue-50 dark:bg-blue-900/20" : ""
+                  }`}
+                >
+                  <span className="text-lg">{g.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate block">{g.name}</span>
+                    <span className="text-[10px] text-slate-400">{g.members.length} members</span>
+                  </div>
+                  {g.id === activeGroupId && (
+                    <svg className="w-4 h-4 text-blue-500 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* BEGIN: Dice Display Area (no box) */}
         <div className="w-full flex flex-col items-center relative">
@@ -478,33 +487,21 @@ export default function DiceView() {
             {/* Radial background backlight glow */}
             <div className="glow-halo" />
 
-            {/* Scattered Floating Confetti Shapes */}
-            <div className="absolute top-0 left-6 text-2xl confetti-float-1 select-none opacity-80 z-0">🧡</div>
-            <div className="absolute bottom-2 left-10 text-2xl confetti-float-3 select-none opacity-80 z-0">⭐</div>
-            <div className="absolute top-1/3 left-2 text-xl confetti-float-2 select-none opacity-60 z-0">🟢</div>
-            <div className="absolute top-4 right-8 text-2xl confetti-float-2 select-none opacity-85 z-0">👾</div>
-            <div className="absolute bottom-4 right-6 text-2xl confetti-float-1 select-none opacity-70 z-0">🔵</div>
-            <div className="absolute top-1/3 right-2 text-xl confetti-float-3 select-none opacity-85 z-0">💖</div>
-            <div className="absolute top-10 left-1/4 text-2xl confetti-float-4 select-none opacity-60 z-0">✨</div>
-            <div className="absolute bottom-8 right-1/4 text-2xl confetti-float-4 select-none opacity-70 z-0">🎊</div>
+            {/* Scattered Floating Shapes */}
+            <div className="absolute top-0 left-6 text-2xl confetti-float-1 select-none opacity-30 z-0">◆</div>
+            <div className="absolute bottom-2 left-10 text-2xl confetti-float-3 select-none opacity-30 z-0">●</div>
+            <div className="absolute top-1/3 left-2 text-xl confetti-float-2 select-none opacity-20 z-0">■</div>
+            <div className="absolute top-4 right-8 text-2xl confetti-float-2 select-none opacity-30 z-0">▲</div>
+            <div className="absolute bottom-4 right-6 text-2xl confetti-float-1 select-none opacity-25 z-0">◆</div>
+            <div className="absolute top-1/3 right-2 text-xl confetti-float-3 select-none opacity-25 z-0">●</div>
+            <div className="absolute top-10 left-1/4 text-2xl confetti-float-4 select-none opacity-20 z-0">■</div>
+            <div className="absolute bottom-8 right-1/4 text-2xl confetti-float-4 select-none opacity-25 z-0">▲</div>
 
             {/* Single Large 3D name-based white Die */}
             <Die3D names={faceNames} rotation={rot1} rolling={rolling} settling={settling} />
           </div>
 
-          {/* Chosen Player Display */}
-          <div className="flex flex-col items-center gap-1.5 mb-4">
-            <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none">Chosen Player 🎯</span>
-            <div className="text-xl font-black text-purple-600 dark:text-[#a589ff] uppercase tracking-wide text-center max-w-xs truncate">
-              {rolling ? (
-                <span className="animate-pulse">Deciding...</span>
-              ) : winner ? (
-                <span>{participants[winnerIndex ?? 0] || winner}</span>
-              ) : (
-                <span>Roll to Choose!</span>
-              )}
-            </div>
-          </div>
+          <div className="h-24"></div>
 
           {/* Roll Button with thick border and flat 3D lift shadows */}
           <motion.button
@@ -523,10 +520,10 @@ export default function DiceView() {
                     boxShadow: "none"
                   }
                 : {
-                    background: "#7c3aed",
-                    borderColor: "#6d28d9",
+                    background: "#1a1a2e",
+                    borderColor: "#000",
                     color: "#ffffff",
-                    boxShadow: "0 6px 0 #4c1d95"
+                    boxShadow: "0 6px 0 #000"
                   }
             }
           >
@@ -543,11 +540,7 @@ export default function DiceView() {
             )}
           </motion.button>
 
-          {/* Info pill with cartoon outline */}
-          <div className="flex items-center gap-2 py-3 px-4 rounded-[1.2rem] bg-[#F0EBFF] dark:bg-[#1f173f] border-2 border-purple-200 dark:border-purple-900 text-purple-600 dark:text-[#b49eff] text-[10px] font-black w-full justify-center select-none mt-5 uppercase tracking-wide">
-            <Info size={14} />
-            <span>The highest number on the dice wins!</span>
-          </div>
+
 
         </div>
         {/* END: Dice Display Area */}
@@ -577,7 +570,7 @@ export default function DiceView() {
             </div>
             <button
               type="submit"
-              className="px-5 py-3.5 rounded-[1.2rem] bg-purple-600 text-white text-xs font-black uppercase tracking-wider border-4 border-purple-800 shadow-[0_4px_0_#4c1d95] active:translate-y-[2px] active:shadow-none hover:-translate-y-[1px] transition-all select-none flex items-center gap-1.5"
+              className="px-5 py-3.5 rounded-[1.2rem] bg-[#1a1a2e] text-white text-xs font-black uppercase tracking-wider border-4 border-black shadow-[0_4px_0_#000] active:translate-y-[2px] active:shadow-none hover:-translate-y-[1px] transition-all select-none flex items-center gap-1.5"
             >
               <Plus size={14} /> Add
             </button>

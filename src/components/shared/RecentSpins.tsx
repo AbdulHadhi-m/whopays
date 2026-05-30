@@ -119,7 +119,7 @@ export default function RecentSpins() {
 
       {/* Content */}
       <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
-        <AnimatePresence mode="wait">
+        <AnimatePresence mode="popLayout">
           {filteredHistory.length === 0 ? (
             <motion.div
               key="empty"

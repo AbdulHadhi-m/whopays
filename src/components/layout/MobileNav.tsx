@@ -2,16 +2,14 @@ import { Home, Users, PlusCircle, History, Menu, X, Dices, Trophy, Settings, Use
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameStore } from "@/store/useGameStore";
 import { soundManager } from "@/components/shared/SoundManager";
-import { useState } from "react";
 
 export default function MobileNav() {
-  const { currentView, setView, theme, toggleTheme } = useGameStore();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { currentView, setView, theme, toggleTheme, menuOpen, setMenuOpen } = useGameStore();
 
   const tabs = [
     { icon: <Home size={24} strokeWidth={2.5} />, label: "Home", view: "home" },
     { icon: <Users size={24} strokeWidth={2.5} />, label: "Groups", view: "group" },
-    { icon: <PlusCircle size={32} strokeWidth={3} />, label: "", view: "create-group", isMain: true },
+    { icon: <PlusCircle size={32} strokeWidth={3} className="text-slate-400" />, label: "", view: "create-group", isMain: true },
     { icon: <History size={24} strokeWidth={2.5} />, label: "History", view: "history" },
     { icon: <Menu size={24} strokeWidth={2.5} />, label: "Menu", view: "menu", isMenu: true },
   ];

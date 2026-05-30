@@ -184,7 +184,7 @@ export default function ResultView() {
         {/* BEGIN: CharacterIllustration */}
         <div className="relative w-full aspect-square max-w-[280px] flex items-center justify-center mb-8" data-purpose="character-container">
           <div className="halo animate-pulse-halo dark:opacity-20"></div>
-          <img alt="Winning Mascot" className="w-full h-full object-contain relative z-10" src="https://lh3.googleusercontent.com/aida/ADBb0ujkxTNPkusBbWhiiJSFE3fnGqM5Bj_WXKmvI6hple2Ax0oWXEEF1h4GIgddz7rGW9btFXKogeYoTnMOInlsKT-tc1qQPOPa4eu35VFtQGodJ7YxQcpDGHgFx4xbPx4R4ejVR5GwhRfdPwFHGsFK2DIZW4ZD69KHPo7vz9R0_5wvHfZyWxIw0_xOp0pPJa_64KyFPuZscocEcFagaGUAXs46eeJlNpxLhenClZo8pxTyauKp_a29W1CseXKg"/>
+          <img alt="Winning Mascot" className="w-full h-full object-contain relative z-10" src="/logos/whopayLogo.svg" />
         </div>
         {/* END: CharacterIllustration */}
 

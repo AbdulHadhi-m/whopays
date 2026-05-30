@@ -6,7 +6,7 @@ import { useGameStore } from "@/store/useGameStore";
 import { soundManager } from "@/components/shared/SoundManager";
 
 export default function HomeView() {
-  const { setView } = useGameStore();
+  const { setView, setMenuOpen } = useGameStore();
 
   return (
     <div className="flex-1 bg-[#faf8ff] dark:bg-[#0a0a1a] text-gray-900 dark:text-white font-sans overflow-x-hidden flex flex-col h-full relative transition-colors duration-300">
@@ -83,16 +83,6 @@ export default function HomeView() {
           background: #0a0a1a;
         }
 
-        /* Navigation Pulse */
-        @keyframes navPulse {
-          0% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.7; transform: scale(1.1); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-        .nav-item.active svg {
-          animation: navPulse 3s ease-in-out infinite;
-        }
-
         /* Magnetic Effect simulation on tap */
         .btn-magnetic {
           transition: transform 0.2s cubic-bezier(0.33, 1, 0.68, 1);
@@ -100,47 +90,11 @@ export default function HomeView() {
         .btn-magnetic:active {
           transform: scale(0.92);
         }
-
-        .nav-item {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.65rem;
-          font-weight: 600;
-          color: #71717a;
-          transition: color 0.3s ease;
-        }
-        .dark .nav-item {
-          color: #8b7db5;
-        }
-        .nav-item.active {
-          color: #2563eb;
-        }
-        .dark .nav-item.active {
-          color: #a855f7;
-        }
-        .plus-button {
-          background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
-          transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        }
-        .dark .plus-button {
-          background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
-          box-shadow: 0 8px 20px rgba(124, 58, 237, 0.3);
-        }
-        .plus-button:active {
-            transform: scale(0.9) rotate(5deg);
-            box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
-        }
-        .dark .plus-button:active {
-            box-shadow: 0 4px 10px rgba(124, 58, 237, 0.4);
-        }
       `}} />
       
       {/* BEGIN: MainHeader */}
       <header className="flex items-center justify-between px-6 py-4 bg-transparent z-20" data-purpose="top-navigation">
-        <button aria-label="Menu" className="p-1 btn-magnetic" onClick={() => setView("settings")}>
+        <button aria-label="Menu" className="p-1 btn-magnetic" onClick={() => setMenuOpen(true)}>
           <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" viewBox="0 0 24 24" width="24">
             <line x1="4" x2="20" y1="12" y2="12"></line>
             <line x1="4" x2="20" y1="6" y2="6"></line>
@@ -166,7 +120,7 @@ export default function HomeView() {
       </header>
       {/* END: MainHeader */}
 
-      <main className="flex-1 overflow-y-auto pb-[6rem] z-10">
+      <main className="flex-1 overflow-y-auto z-10">
         {/* BEGIN: HeroSection */}
         <section className="flex flex-col items-center justify-center px-6 pt-4 pb-8" data-purpose="hero">
           <motion.div
@@ -201,9 +155,9 @@ export default function HomeView() {
         <section className="grid grid-cols-2 gap-4 px-6" data-purpose="navigation-cards">
           <div 
             onClick={() => { soundManager.playTick(); setView("spin"); }}
-            className="action-card bg-white dark:bg-[#12122a]/90 rounded-[1.25rem] p-5 flex flex-col items-center justify-between aspect-[4/5] border border-gray-50 dark:border-[#7c3aed]/20 animate-entrance delay-3 cursor-pointer backdrop-blur-sm"
+            className="action-card bg-white dark:bg-[#12122a]/90 rounded-[1.25rem] p-2 flex flex-row items-center justify-center gap-3 aspect-[3/1] border border-gray-50 dark:border-[#7c3aed]/20 animate-entrance delay-3 cursor-pointer backdrop-blur-sm"
           >
-            <div className="w-full flex justify-center py-2 text-gray-900 dark:text-white" data-purpose="wheel-illustration">
+            <div className="flex justify-center text-gray-900 dark:text-white" data-purpose="wheel-illustration">
               <svg height="60" viewBox="0 0 100 100" width="60" xmlns="http://www.w3.org/2000/svg">
                 <circle cx="50" cy="50" r="45" stroke="currentColor" strokeWidth="2" className="fill-gray-100 dark:fill-slate-800 transition-colors"></circle>
                 <path d="M50 50 L50 5 A45 45 0 0 1 95 50 Z" fill="#2563eb" stroke="currentColor" strokeWidth="1.5" className="dark:fill-[#7c3aed] transition-colors"></path>
@@ -218,9 +172,9 @@ export default function HomeView() {
           </div>
           <div 
             onClick={() => { soundManager.playTick(); setView("dice"); }}
-            className="action-card bg-white dark:bg-[#12122a]/90 rounded-[1.25rem] p-5 flex flex-col items-center justify-between aspect-[4/5] border border-gray-50 dark:border-[#7c3aed]/20 animate-entrance delay-4 cursor-pointer backdrop-blur-sm"
+            className="action-card bg-white dark:bg-[#12122a]/90 rounded-[1.25rem] p-2 flex flex-row items-center justify-center gap-3 aspect-[3/1] border border-gray-50 dark:border-[#7c3aed]/20 animate-entrance delay-4 cursor-pointer backdrop-blur-sm"
           >
-            <div className="w-full flex justify-center py-2 text-gray-900 dark:text-white" data-purpose="dice-illustration">
+            <div className="flex justify-center text-gray-900 dark:text-white" data-purpose="dice-illustration">
               <svg height="60" viewBox="0 0 100 100" width="60" xmlns="http://www.w3.org/2000/svg">
                 <rect height="50" rx="8" stroke="currentColor" strokeWidth="2.5" transform="rotate(5 50 50)" width="50" x="25" y="25" className="fill-white dark:fill-[#1e1e3f] transition-colors"></rect>
                 <circle cx="42" cy="42" r="4" transform="rotate(5 50 50)" className="fill-gray-900 dark:fill-white transition-colors"></circle>
@@ -236,51 +190,7 @@ export default function HomeView() {
         {/* END: QuickActions */}
       </main>
 
-      {/* BEGIN: BottomNavigation */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white dark:bg-[#12122a] border-t border-gray-100 dark:border-[#7c3aed]/20 px-4 pt-3 pb-6 flex items-end justify-between z-50 lg:hidden transition-colors" data-purpose="bottom-tab-bar">
-        <button className="nav-item active flex-1" onClick={() => setView("home")}>
-          <svg className="mb-1" fill="currentColor" height="24" viewBox="0 0 24 24" width="24">
-            <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path>
-          </svg>
-          <span>Home</span>
-        </button>
-        <button className="nav-item flex-1" onClick={() => setView("group")}>
-          <svg className="mb-1" fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24">
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-            <circle cx="9" cy="7" r="4"></circle>
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-          </svg>
-          <span>Groups</span>
-        </button>
-        <div className="relative px-2 -top-4">
-          <button 
-            onClick={() => { soundManager.playTick(); setView("create-group"); }}
-            aria-label="Add or Spin" 
-            className="plus-button w-14 h-14 rounded-full flex items-center justify-center text-white"
-          >
-            <svg fill="none" height="32" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" viewBox="0 0 24 24" width="32">
-              <line x1="12" x2="12" y1="5" y2="19"></line>
-              <line x1="5" x2="19" y1="12" y2="12"></line>
-            </svg>
-          </button>
-        </div>
-        <button className="nav-item flex-1" onClick={() => setView("history")}>
-          <svg className="mb-1" fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24">
-            <circle cx="12" cy="12" r="10"></circle>
-            <polyline points="12 6 12 12 16 14"></polyline>
-          </svg>
-          <span>History</span>
-        </button>
-        <button className="nav-item flex-1" onClick={() => setView("profile")}>
-          <svg className="mb-1" fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24">
-            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-            <circle cx="12" cy="7" r="4"></circle>
-          </svg>
-          <span>Profile</span>
-        </button>
-      </nav>
-      {/* END: BottomNavigation */}
+
     </div>
   );
 }
