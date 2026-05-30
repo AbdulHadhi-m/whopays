@@ -108,7 +108,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   spinHistory: [],
 
   // Navigation & Views
-  currentView: "splash",
+  currentView: "home",
   setView: (view) => set({ currentView: view }),
   menuOpen: false,
   setMenuOpen: (open) => set({ menuOpen: open }),
