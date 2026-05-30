@@ -24,10 +24,10 @@ export default function Sidebar() {
       
       {/* Brand Header with Cartoon Tilt Icon */}
       <div className="flex items-center gap-3 mb-8 pl-2">
-        <div className="w-12 h-12 bg-purple-600 dark:bg-purple-800 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-[0_6px_0_#4c1d95] border-2 border-purple-850 rotate-[-5deg]">
-          <span>🎲</span>
+        <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-blue-600 dark:from-purple-700 dark:to-blue-700 rounded-2xl flex items-center justify-center shadow-[0_6px_0_#3730a3] border-2 border-indigo-800 rotate-[-5deg] overflow-hidden p-1">
+          <img src="/logos/whopayLogo.svg" alt="WhoPay" className="w-full h-full object-contain" />
         </div>
-        <h1 className="text-[28px] font-black tracking-tighter drop-shadow-sm text-gray-900 dark:text-white">PaySpin</h1>
+        <h1 className="text-[28px] font-black tracking-tighter drop-shadow-sm text-gray-900 dark:text-white">WhoPay</h1>
       </div>
 
       {/* Navigation list with original cartoon lift button physics */}
@@ -43,7 +43,7 @@ export default function Sidebar() {
               }}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-[1.2rem] font-black text-sm transition-all border-4 ${
                 isActive
-                  ? "bg-purple-600 dark:bg-purple-700 text-white border-purple-800 dark:border-purple-900 shadow-[0_4px_0_#4c1d95] dark:shadow-[0_4px_0_#2e1065] translate-y-[-2px]"
+                  ? "bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-700 dark:to-blue-700 text-white border-indigo-800 dark:border-indigo-900 shadow-[0_4px_0_#3730a3] dark:shadow-[0_4px_0_#1e1b4b] translate-y-[-2px]"
                   : "bg-transparent text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-200 dark:hover:border-white/20"
               } active:shadow-none active:translate-y-[2px]`}
             >
@@ -55,7 +55,7 @@ export default function Sidebar() {
       </nav>
 
       {/* Cartoon Theme Switcher block */}
-      <div className="mt-4 bg-gradient-to-br from-[#a855f7] to-[#7e22ce] p-4 rounded-[2rem] border-4 border-[#581c87] shadow-[0_6px_0_#581c87] relative overflow-hidden flex flex-col items-center text-center">
+      <div className="mt-4 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-4 rounded-[2rem] border-4 border-indigo-800 shadow-[0_6px_0_#3730a3] relative overflow-hidden flex flex-col items-center text-center">
         <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/20 rounded-full blur-2xl"></div>
         <button
           onClick={() => {

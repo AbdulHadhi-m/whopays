@@ -108,7 +108,7 @@ export default function HomeView() {
               <path d="M50 30l-5 20h10l-5-20z"></path>
             </svg>
           </div>
-          <span className="text-xl font-extrabold tracking-tight text-[#1a1a1a] dark:text-white transition-colors">PaySpin</span>
+          <span className="text-xl font-extrabold tracking-tight text-[#1a1a1a] dark:text-white transition-colors">WhoPay</span>
         </div>
         <button aria-label="Notifications" className="relative p-1 btn-magnetic" onClick={() => setView("history")}>
           <svg fill="none" height="24" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" width="24">
@@ -136,7 +136,7 @@ export default function HomeView() {
               className="relative w-full h-full"
             >
               <img
-                alt="PaySpin Mascot"
+                alt="WhoPay Mascot"
                 className="w-full h-full object-contain drop-shadow-[0_0_40px_rgba(124,58,237,0.25)]"
                 src="/images/mainpageicon.svg"
               />

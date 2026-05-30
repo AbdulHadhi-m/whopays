@@ -102,7 +102,7 @@ export default function ResultView() {
   const handleNextRound = () => {
     soundManager.playTick();
     setWinner(null, null);
-    setView("spin"); 
+    setView("dice");
   };
 
   const handleBackHome = () => {

@@ -100,10 +100,10 @@ export default function MobileNav() {
               className="w-[280px] h-full bg-payspin-blue dark:bg-payspin-dark-card text-white p-6 shadow-2xl relative z-[101] flex flex-col border-r-4 border-payspin-blue-dark dark:border-slate-800"
             >
               <div className="flex items-center gap-3 mb-8 mt-4 pl-2">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-payspin-blue font-black text-2xl shadow-[0_6px_0_#9333ea] border-2 border-payspin-blue rotate-[-5deg]">
-                  <span>🎲</span>
+                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-[0_6px_0_#1d4ed8] border-2 border-payspin-blue rotate-[-5deg] overflow-hidden p-1">
+                  <img src="/logos/whopayLogo.svg" alt="WhoPay" className="w-full h-full object-contain" />
                 </div>
-                <h1 className="text-[28px] font-black tracking-tighter drop-shadow-md text-white">PaySpin</h1>
+                <h1 className="text-[28px] font-black tracking-tighter drop-shadow-md text-white">WhoPay</h1>
                 <button 
                   onClick={() => setMenuOpen(false)}
                   className="ml-auto w-10 h-10 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 active:scale-95 transition-all"
@@ -136,7 +136,7 @@ export default function MobileNav() {
                 })}
               </nav>
 
-              <div className="mt-4 bg-gradient-to-br from-[#a855f7] to-[#7e22ce] p-4 rounded-[2rem] border-4 border-[#581c87] shadow-[0_6px_0_#581c87] relative overflow-hidden flex flex-col items-center text-center">
+              <div className="mt-4 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 p-4 rounded-[2rem] border-4 border-indigo-800 shadow-[0_6px_0_#3730a3] relative overflow-hidden flex flex-col items-center text-center">
                 <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/20 rounded-full blur-2xl"></div>
                 <button
                   onClick={() => {

@@ -520,10 +520,10 @@ export default function DiceView() {
                     boxShadow: "none"
                   }
                 : {
-                    background: "#1a1a2e",
-                    borderColor: "#000",
+                    background: "#3b82f6",
+                    borderColor: "#2563eb",
                     color: "#ffffff",
-                    boxShadow: "0 6px 0 #000"
+                    boxShadow: "0 6px 0 #2563eb"
                   }
             }
           >
@@ -570,7 +570,7 @@ export default function DiceView() {
             </div>
             <button
               type="submit"
-              className="px-5 py-3.5 rounded-[1.2rem] bg-[#1a1a2e] text-white text-xs font-black uppercase tracking-wider border-4 border-black shadow-[0_4px_0_#000] active:translate-y-[2px] active:shadow-none hover:-translate-y-[1px] transition-all select-none flex items-center gap-1.5"
+              className="px-5 py-3.5 rounded-[1.2rem] bg-[#3b82f6] text-white text-xs font-black uppercase tracking-wider border-4 border-[#2563eb] shadow-[0_4px_0_#2563eb] active:translate-y-[2px] active:shadow-none hover:-translate-y-[1px] transition-all select-none flex items-center gap-1.5"
             >
               <Plus size={14} /> Add
             </button>
