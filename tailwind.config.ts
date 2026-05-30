@@ -24,7 +24,7 @@ const config: Config = {
         "payspin-text-dark": "#f8fafc",
       },
       fontFamily: {
-        sans: ["var(--font-nunito)", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "var(--font-nunito)", "sans-serif"],
       },
       boxShadow: {
         'soft': '0 10px 40px -10px rgba(0,0,0,0.08)',

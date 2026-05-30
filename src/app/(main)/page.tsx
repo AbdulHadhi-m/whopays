@@ -4,17 +4,18 @@ import { useState, useEffect } from "react";
 import { useGameStore } from "@/store/useGameStore";
 import { soundManager } from "@/components/shared/SoundManager";
 import SpinWheel from "@/components/wheel/SpinWheel";
-import Dice from "@/components/wheel/Dice";
-import RecentSpins from "@/components/shared/RecentSpins";
+import DiceView from "@/components/dashboard/DiceView";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Volume2, VolumeX, Plus, Users, ArrowLeft, Settings, 
-  Trophy, History, User, Heart, Share2, Info, LogOut, Check, ChevronRight
+  Trophy, History,   User, Heart, Share2, Info, LogOut, Check, ChevronRight, Pencil, UserPlus, RefreshCw, AlertTriangle, Sparkles, Trash2
 } from "lucide-react";
 import Sidebar from "@/components/layout/Sidebar";
 import MobileNav from "@/components/layout/MobileNav";
-import HeroArea from "@/components/dashboard/HeroArea";
-import DashboardCards from "@/components/dashboard/DashboardCards";
+import HomeView from "@/components/dashboard/HomeView";
+import ResultView from "@/components/dashboard/ResultView";
+import GroupView from "@/components/dashboard/GroupView";
+import SettingsView from "@/components/dashboard/SettingsView";
 
 // AVATAR COLORS FOR GROUP SCREEN AND OTHERS
 const AVATAR_COLORS = [
@@ -265,25 +266,88 @@ export default function WhoPayAppRouter() {
 
   // 2. Home Screen
   const renderHomeView = () => (
-    <div className="flex-1 flex flex-col p-4 md:p-8 overflow-y-auto">
-      <HeroArea />
-      <DashboardCards />
-    </div>
+    <HomeView />
   );
 
   // 3. Spin Wheel Screen
   const renderSpinView = () => (
-    <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a] pb-16">
+    <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a] h-full pb-16 lg:pb-0">
       {renderHeader("Spin the Wheel")}
-      <div className="flex-1 p-4 flex flex-col items-center justify-center gap-6">
+      <div className="flex-1 p-4 flex flex-col gap-4 overflow-y-auto min-h-0">
         {/* Active group header */}
         <motion.div
           whileHover={{ scale: 1.05 }}
           onClick={() => setView("group")}
-          className="px-4 py-2 rounded-full bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 text-xs font-black flex items-center gap-2 cursor-pointer shadow-[0_0_16px_rgba(124,58,237,0.1)] hover:shadow-[0_0_24px_rgba(124,58,237,0.2)] transition-all"
+          className="px-4 py-2 rounded-full bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 text-xs font-black flex items-center gap-2 cursor-pointer shadow-[0_0_16px_rgba(124,58,237,0.1)] hover:shadow-[0_0_24px_rgba(124,58,237,0.2)] transition-all self-center"
         >
           <span>👥 {activeGroup.name}</span>
           <span className="text-[10px] text-[#7c3aed]">({participants.length} members) ›</span>
+        </motion.div>
+
+        {/* Add Player Input */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="w-full p-4 rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 shadow-[0_0_16px_rgba(124,58,237,0.1)]"
+        >
+          <form onSubmit={handleAddPlayer} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm">👤</span>
+              <input
+                value={newPlayerName}
+                onChange={(e) => setNewPlayerName(e.target.value)}
+                placeholder="Add player name..."
+                maxLength={15}
+                className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white/80 dark:bg-[#1a1a3e]/80 border border-[#7c3aed]/20 text-xs font-semibold text-[var(--foreground)] placeholder:text-[#7c3aed]/30 focus:outline-none focus:border-[#7c3aed]/50 focus:ring-2 focus:ring-[#7c3aed]/10 transition-all"
+              />
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="submit"
+              disabled={!newPlayerName.trim()}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white font-black text-xs shadow-lg shadow-[#7c3aed]/30 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            >
+              <Plus size={18} />
+            </motion.button>
+            {participants.length > 0 && (
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                type="button"
+                onClick={() => { soundManager.playTick(); clearParticipants(); triggerToast("Cleared all players!"); }}
+                className="px-3 py-2.5 rounded-xl bg-red-50 dark:bg-red-500/10 text-red-400 font-black text-xs border border-red-200 dark:border-red-500/20 hover:bg-red-100 dark:hover:bg-red-500/20 transition-all"
+              >
+                <Trash2 size={16} />
+              </motion.button>
+            )}
+          </form>
+
+          {/* Participant Chips */}
+          {participants.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {participants.map((name, idx) => (
+                <motion.span
+                  key={`${name}-${idx}`}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[10px] font-bold text-white shadow-sm"
+                  style={{
+                    background: `linear-gradient(135deg, ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}, ${AVATAR_COLORS[(idx + 1) % AVATAR_COLORS.length]})`,
+                  }}
+                >
+                  <span className="max-w-[80px] truncate">{name}</span>
+                  <button
+                    onClick={() => { soundManager.playTick(); removeParticipant(idx); }}
+                    className="w-3.5 h-3.5 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/40 transition-colors"
+                  >
+                    <span className="text-[8px] leading-none">✕</span>
+                  </button>
+                </motion.span>
+              ))}
+            </div>
+          )}
         </motion.div>
 
         {/* Spin wheel container */}
@@ -335,21 +399,7 @@ export default function WhoPayAppRouter() {
 
   // 4. Roll Dice Screen
   const renderDiceView = () => (
-    <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a] pb-16">
-      {renderHeader("Roll the Dice")}
-      <div className="flex-1 p-4 flex flex-col items-center justify-start overflow-y-auto">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          onClick={() => setView("group")}
-          className="px-4 py-2 rounded-full bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 text-xs font-black flex items-center gap-2 cursor-pointer shadow-[0_0_16px_rgba(124,58,237,0.1)] hover:shadow-[0_0_24px_rgba(124,58,237,0.2)] transition-all mb-2"
-        >
-          <span>👥 {activeGroup.name}</span>
-          <span className="text-[10px] text-[#7c3aed]">({participants.length} members) ›</span>
-        </motion.div>
-
-        <Dice />
-      </div>
-    </div>
+    <DiceView />
   );
 
   // 5. Dice Modes Guide
@@ -387,229 +437,13 @@ export default function WhoPayAppRouter() {
   );
 
   // 6. Result Screen
-  const renderResultView = () => {
-    // Determine caption
-    const captions = [
-      "Better luck next time! 😅",
-      "Fate has spoken — time to pay up! 💸",
-      "Your wallet's worst nightmare! 😂",
-      "Bring out the cash! 💰",
-      "Escape plan failed! 🍽️"
-    ];
-    const captionIdx = winner ? Array.from(winner).reduce((acc, c) => acc + c.charCodeAt(0), 0) % captions.length : 0;
-    const caption = captions[captionIdx];
-
-    return (
-      <div className="flex-1 flex flex-col justify-between p-6 text-center bg-[#f5f0ff] dark:bg-[#0a0a1a] relative overflow-hidden">
-        {/* Background glow */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-gradient-to-r from-[#7c3aed]/20 to-[#ec4899]/20 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Top Spacer */}
-        <div className="pt-4 relative z-10" />
-
-        {/* Mascot sunglasses */}
-        <div className="flex flex-col items-center relative z-10">
-          <motion.div
-            initial={{ scale: 0.6, rotate: -45 }}
-            animate={{ scale: 1, rotate: 0 }}
-            className="w-24 h-24 rounded-full bg-gradient-to-br from-[#7c3aed]/20 to-[#ec4899]/20 border-4 border-[#7c3aed] flex items-center justify-center text-6xl shadow-[0_0_50px_rgba(124,58,237,0.3)] select-none"
-          >
-            😎
-          </motion.div>
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mt-6 px-6 py-2 rounded-2xl bg-gradient-to-r from-[#ec4899] to-[#ff6d00] text-white font-black text-lg shadow-[0_0_30px_rgba(236,72,153,0.3)] uppercase tracking-wider"
-          >
-            {winner?.includes("&") ? "Splits!" : "Paying!"}
-          </motion.div>
-          <motion.h2
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-3xl font-black text-[var(--foreground)] mt-4 leading-tight"
-          >
-            {winner}
-          </motion.h2>
-          <p className="text-xs font-bold text-[#7c3aed]/60 mt-2">
-            {caption}
-          </p>
-        </div>
-
-        {/* Roast Speech Bubble */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="p-4 rounded-3xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#ec4899]/20 mt-4 relative shadow-[0_0_20px_rgba(236,72,153,0.1)]"
-        >
-          <span className="text-[10px] font-bold text-[#7c3aed]/60 block mb-1">🔥 THE SQUAD ROAST:</span>
-          <p className="text-xs font-black bg-gradient-to-r from-[#ec4899] to-[#ff6d00] bg-clip-text text-transparent italic">
-            "{winner} is washing the dishes tonight! Card declined loading... 😂"
-          </p>
-        </motion.div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col gap-2.5 mt-8 w-full relative z-10">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              soundManager.playTick();
-              const formattedRoast = `${winner} got absolutely owned! Wallet crying again? 😂🔥`;
-              triggerToast("Copied roast template! Go post it.");
-              setRoastsList([
-                { name: winner || "Alex 😎", roast: "dish washer duty loading... 🍽️🧴", likes: 1 },
-                ...roastsList
-              ]);
-            }}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#ec4899] to-[#ff6d00] text-white font-black text-xs shadow-[0_0_20px_rgba(236,72,153,0.3)] flex items-center justify-center gap-2"
-          >
-            Roast {winner?.split(" ")[0]} 😈
-          </motion.button>
-          
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => {
-              soundManager.playTick();
-              setWinner(null, null);
-              setView("spin");
-            }}
-            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#7c3aed] to-[#4f28cc] text-white font-black text-xs shadow-[0_0_20px_rgba(124,58,237,0.3)]"
-          >
-            Next Round ▷
-          </motion.button>
-
-          <button
-            onClick={() => {
-              soundManager.playTick();
-              setWinner(null, null);
-              setView("home");
-            }}
-            className="w-full py-3 bg-white/70 dark:bg-[#12122a]/80 backdrop-blur border border-[#7c3aed]/20 text-[#7c3aed] rounded-2xl font-bold text-xs hover:shadow-[0_0_16px_rgba(124,58,237,0.15)] transition-all"
-          >
-            Back to Home
-          </button>
-        </div>
-      </div>
-    );
-  };
+  const renderResultView = () => (
+    <ResultView />
+  );
 
   // 7. Group Screen
   const renderGroupView = () => (
-    <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a] pb-16">
-      {renderHeader(activeGroup.name)}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-        {/* Members Header */}
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-bold text-[#7c3aed]/60 uppercase">Members ({activeGroup.members.length})</span>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            onClick={() => setView("create-group")}
-            className="text-[10px] font-black text-white px-3 py-1.5 bg-gradient-to-r from-[#7c3aed] to-[#ec4899] rounded-lg shadow-[0_0_12px_rgba(124,58,237,0.2)]"
-          >
-            + Invite
-          </motion.button>
-        </div>
-
-        {/* Member Row */}
-        <div className="flex items-center gap-3 overflow-x-auto pb-1 select-none">
-          {activeGroup.members.map((member, idx) => {
-            const initials = member.replace(/\p{Emoji}/gu, "").trim().slice(0, 2).toUpperCase() || "??";
-            return (
-              <motion.div
-                key={idx}
-                whileHover={{ y: -3 }}
-                className="flex flex-col items-center flex-shrink-0 gap-1"
-              >
-                <div 
-                  className="w-11 h-11 rounded-2xl flex items-center justify-center text-xs font-black text-white shadow-[0_0_16px_rgba(0,0,0,0.15)]"
-                  style={{ background: AVATAR_COLORS[idx % AVATAR_COLORS.length], boxShadow: `0 0 16px ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}40` }}
-                >
-                  {initials}
-                </div>
-                <span className="text-[9px] font-black max-w-[50px] truncate text-[var(--foreground)]">{member.split(" ")[0]}</span>
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* Buttons Row */}
-        <div className="grid grid-cols-2 gap-2">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => triggerToast("Invite link copied to clipboard!")}
-            className="py-2.5 rounded-xl text-xs font-black bg-white/70 dark:bg-[#12122a]/80 backdrop-blur border border-[#7c3aed]/20 text-[var(--foreground)] flex items-center justify-center gap-2 shadow-[0_0_12px_rgba(124,58,237,0.08)]"
-          >
-            Invite Friends
-          </motion.button>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => triggerToast("Shared group link!")}
-            className="py-2.5 rounded-xl text-xs font-black bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(124,58,237,0.3)]"
-          >
-            Share Group
-          </motion.button>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { label: "Rounds", value: activeGroup.rounds, color: "#7c3aed" },
-            { label: "Total Paid", value: `$${activeGroup.totalPaid}`, color: "#00c853" },
-            { label: "Members Paid", value: `${activeGroup.members.length - 1}`, color: "#ff6d00" },
-          ].map((stat, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.1 }}
-              className="p-3 text-center rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 shadow-[0_0_12px_rgba(124,58,237,0.08)]"
-            >
-              <span className="text-[9px] font-bold text-[#7c3aed]/60 block uppercase">{stat.label}</span>
-              <span className="text-sm font-black block mt-1" style={{ color: stat.color }}>{stat.value}</span>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Group Feed list */}
-        <div className="flex flex-col gap-2">
-          <span className="text-[11px] font-bold text-[#7c3aed]/60 uppercase self-start mb-1">Group Activity</span>
-          <div className="space-y-2">
-            {activeGroup.activity.length === 0 ? (
-              <p className="text-xs text-[#7c3aed]/50 text-center py-4 font-bold">No group activity yet. Start spinning!</p>
-            ) : (
-              activeGroup.activity.map((act, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 0.05 }}
-                  className="p-3 rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur border border-[#7c3aed]/20 flex justify-between items-center shadow-[0_0_8px_rgba(124,58,237,0.06)]"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-white/60 to-white/30 dark:from-[#1a1a3e] dark:to-[#12122a] border border-[#7c3aed]/10 text-sm flex items-center justify-center flex-shrink-0">
-                      {act.action === "paid" ? "💳" : "🍀"}
-                    </div>
-                    <div>
-                      <span className="text-xs font-black text-[var(--foreground)]">{act.name}</span>
-                      <span className="text-[10px] font-bold text-[#7c3aed]/50 block mt-0.5">
-                        {act.action === "paid" ? `Paid bill amount $${act.amount}` : "Escaped the bill!"}
-                      </span>
-                    </div>
-                  </div>
-                  <span className="text-[9px] font-bold text-[#7c3aed]/40">{act.time}</span>
-                </motion.div>
-              ))
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
+    <GroupView />
   );
 
   // 8. Troll Corner
@@ -745,206 +579,369 @@ export default function WhoPayAppRouter() {
 
   // 9. History Screen
   const renderHistoryView = () => (
-    <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a] pb-16">
-      {renderHeader("History 🕐")}
-      <div className="flex-1 overflow-y-auto px-4 py-2">
-        <div className="p-3 rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 shadow-[0_0_16px_rgba(124,58,237,0.08)]">
-          <RecentSpins />
+    <div className="flex-1 flex flex-col bg-[#faf8ff] dark:bg-[#0a0a1a] pb-16 relative">
+      {/* Header */}
+      <header className="flex items-center justify-between px-6 py-8">
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => { soundManager.playTick(); setView("home"); }}
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1a1a3e] shadow-[0_10px_25px_-5px_rgba(168,85,247,0.1)] text-slate-500 hover:text-[#a855f7] transition-colors"
+        >
+          <ArrowLeft size={20} />
+        </motion.button>
+        <div className="flex items-center space-x-2">
+          <h1 className="text-xl md:text-2xl font-bold text-[#a855f7] tracking-tight">History</h1>
+          <div className="w-3 h-3 rounded-full bg-[#a855f7] shadow-sm" />
         </div>
-      </div>
+        <motion.button
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          onClick={() => { soundManager.playTick(); setView("settings"); }}
+          className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1a1a3e] shadow-[0_10px_25px_-5px_rgba(168,85,247,0.1)] text-slate-500 hover:text-[#a855f7] transition-colors"
+        >
+          <Settings size={20} />
+        </motion.button>
+      </header>
+
+      {/* Content Area */}
+      <section className="px-5 md:px-10 flex-1 pb-10">
+        <div className="bg-white dark:bg-[#12122a]/80 rounded-[40px] md:rounded-[48px] border border-purple-50 dark:border-[#7c3aed]/20 p-6 md:p-10 min-h-[500px] flex flex-col transition-all shadow-[0_0_40px_rgba(168,85,247,0.05)]">
+          {/* History Meta */}
+          <div className="flex flex-col sm:flex-row items-center justify-between mb-8 gap-4">
+            <div className="flex items-center space-x-3 w-full sm:w-auto">
+              <div className="w-12 h-12 bg-purple-50 dark:bg-[#7c3aed]/10 rounded-2xl flex items-center justify-center text-[#a855f7] shadow-sm border border-purple-100 dark:border-[#7c3aed]/20 shrink-0">
+                <History size={24} />
+              </div>
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-800 dark:text-white leading-tight">History</h2>
+                <p className="text-xs font-medium text-slate-400">Recent rounds and activities</p>
+              </div>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => triggerToast("Refreshed!")}
+              className="flex items-center space-x-2 bg-purple-50 dark:bg-[#7c3aed]/10 px-5 py-2.5 rounded-2xl text-[#a855f7] hover:bg-purple-100 dark:hover:bg-[#7c3aed]/20 transition-colors w-full sm:w-auto justify-center group"
+            >
+              <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+              <span className="text-sm font-bold">Refresh</span>
+            </motion.button>
+          </div>
+
+          {/* Toggle Tabs */}
+          <div className="bg-purple-50/50 dark:bg-[#1a1a3e]/50 p-1.5 rounded-[32px] flex items-center mb-12 max-w-xl mx-auto w-full">
+            <button className="flex-1 bg-gradient-to-r from-[#a855f7] to-[#9333ea] text-white py-4 px-6 rounded-[28px] flex items-center justify-center space-x-2 shadow-lg shadow-purple-200 dark:shadow-[#7c3aed]/30 transition-transform active:scale-95">
+              <span className="text-xl">🎡</span>
+              <span className="font-bold text-sm md:text-base">Spin Wheel</span>
+            </button>
+            <button className="flex-1 text-slate-400 py-4 px-6 rounded-[28px] flex items-center justify-center space-x-2 hover:bg-white/50 dark:hover:bg-white/5 transition-colors">
+              <span className="text-xl opacity-70">🎲</span>
+              <span className="font-bold text-sm md:text-base">Dice Rolls</span>
+            </button>
+          </div>
+
+          {/* Empty State */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-4 max-w-md mx-auto w-full">
+            <motion.div
+              animate={{ opacity: [0.7, 1, 0.7] }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-20 h-20 rounded-full bg-slate-50 dark:bg-[#1a1a3e]/50 border-2 border-dashed border-slate-200 dark:border-[#7c3aed]/20 flex items-center justify-center mb-8"
+            >
+              <AlertTriangle size={40} className="text-slate-300 dark:text-white/30" />
+            </motion.div>
+            <h3 className="text-slate-800 dark:text-white font-bold text-xl mb-3">No rounds yet!</h3>
+            <p className="text-slate-400 text-sm md:text-base font-medium leading-relaxed">
+              Your recent activity will appear here once you start playing. Spin the wheel to get started.
+            </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => { soundManager.playTick(); setView("home"); }}
+              className="mt-8 px-8 py-3.5 bg-[#a855f7] text-white font-bold rounded-2xl shadow-lg shadow-purple-100 dark:shadow-[#7c3aed]/30 transition-transform"
+            >
+              Try a spin now
+            </motion.button>
+          </div>
+        </div>
+      </section>
+
+      {/* Decorative Bottom Shape */}
+      <div className="absolute bottom-0 left-0 right-0 h-48 bg-gradient-to-t from-purple-50/50 to-transparent dark:from-[#7c3aed]/5 -z-10 opacity-60 pointer-events-none" />
     </div>
   );
 
   // 10. Leaderboard
   const renderLeaderboardView = () => (
-    <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a] pb-16">
-      {renderHeader("Leaderboard 🏆")}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-        {/* Podium Layout */}
-        <div className="flex items-end justify-center gap-3 pt-6 pb-2 select-none">
+    <div className="flex-1 flex flex-col bg-gradient-to-b from-[#faf8ff] via-[#fce4ec]/30 to-[#f3e5f5]/30 dark:from-[#0a0a1a] dark:via-[#1a0a2e] dark:to-[#0a1a2e] pb-16 relative overflow-hidden">
+      {/* Background floating particles */}
+      <motion.div animate={{ y: [0, -20, 0], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }} className="absolute top-20 right-10 w-24 h-24 rounded-full bg-gradient-to-br from-[#ff6b9d]/15 to-transparent blur-2xl pointer-events-none" />
+      <motion.div animate={{ y: [0, 20, 0], opacity: [0.2, 0.5, 0.2] }} transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} className="absolute top-40 left-5 w-28 h-28 rounded-full bg-gradient-to-br from-[#a29bfe]/15 to-transparent blur-2xl pointer-events-none" />
+      <motion.div animate={{ x: [0, 15, 0], opacity: [0.2, 0.4, 0.2] }} transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-40 right-16 w-20 h-20 rounded-full bg-gradient-to-br from-[#fdcb6e]/15 to-transparent blur-2xl pointer-events-none" />
+      <motion.div animate={{ x: [0, -10, 0], opacity: [0.15, 0.35, 0.15] }} transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }} className="absolute bottom-60 left-20 w-16 h-16 rounded-full bg-gradient-to-br from-[#4ecdc4]/15 to-transparent blur-2xl pointer-events-none" />
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-6 py-8 relative z-10">
+        <motion.button whileHover={{ scale: 1.1, rotate: -5 }} whileTap={{ scale: 0.9 }} onClick={() => { soundManager.playTick(); setView("home"); }} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1a1a3e] shadow-lg text-slate-500 hover:text-[#ff6b9d] transition-colors">
+          <ArrowLeft size={20} />
+        </motion.button>
+        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 15 }} className="flex items-center gap-2">
+          <motion.div animate={{ rotate: [0, -10, 10, -10, 0] }} transition={{ duration: 2, repeat: Infinity }}>
+            <Trophy size={24} className="text-[#ffd93d]" fill="#ffd93d" />
+          </motion.div>
+          <h1 className="text-2xl font-extrabold bg-gradient-to-r from-[#ff6b9d] via-[#a29bfe] to-[#4ecdc4] bg-clip-text text-transparent">
+            Leaderboard
+          </h1>
+          <Sparkles size={18} className="text-[#fdcb6e]" />
+        </motion.div>
+        <motion.button whileHover={{ scale: 1.1, rotate: 5 }} whileTap={{ scale: 0.9 }} onClick={() => { soundManager.playTick(); setView("settings"); }} className="w-10 h-10 flex items-center justify-center rounded-xl bg-white dark:bg-[#1a1a3e] shadow-lg text-slate-500 hover:text-[#ff6b9d] transition-colors">
+          <Settings size={20} />
+        </motion.button>
+      </div>
+
+      {/* Podium */}
+      <div className="relative z-10 px-4 pt-4 pb-6">
+        <div className="flex items-end justify-center gap-4">
           {/* 2nd Place */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.15 }}
-            className="flex flex-col items-center"
-          >
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white/70 to-white/30 dark:from-[#1a1a3e] dark:to-[#12122a] border-2 border-[#7c3aed]/30 flex items-center justify-center text-sm shadow-[0_0_16px_rgba(124,58,237,0.15)]">🥈</div>
-            <span className="text-[9px] font-black text-[var(--foreground)] mt-1 truncate max-w-[60px]">Jamie 🌟</span>
-            <div className="w-16 bg-gradient-to-t from-[#7c3aed]/20 to-[#7c3aed]/5 rounded-t-xl flex flex-col items-center justify-center py-2 mt-1 shadow-[0_0_12px_rgba(124,58,237,0.1)] backdrop-blur">
-              <span className="text-[10px] font-black text-[#7c3aed]">#2</span>
-              <span className="text-[8px] font-bold text-[#7c3aed]/60">8 times</span>
+          <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2, type: "spring", stiffness: 200, damping: 12 }} className="flex flex-col items-center">
+            <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.5 }} className="flex flex-col items-center">
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#4ecdc4] to-[#45b7d1] flex items-center justify-center text-2xl shadow-lg shadow-[#4ecdc4]/30 border-2 border-white/50">
+                  🥈
+                </div>
+                <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1] }} transition={{ delay: 0.8, type: "spring" }} className="absolute -top-1 -right-1 w-5 h-5 bg-[#4ecdc4] rounded-full flex items-center justify-center text-[10px] font-black text-white shadow">
+                  2
+                </motion.div>
+              </div>
+              <span className="text-xs font-bold text-[#4ecdc4] mt-2">Jamie</span>
+              <span className="text-[10px] text-slate-400">✨ 8 wins</span>
+            </motion.div>
+            <div className="w-16 h-16 mt-2 bg-gradient-to-t from-[#4ecdc4]/30 to-[#4ecdc4]/5 rounded-2xl flex items-center justify-center backdrop-blur border border-[#4ecdc4]/20">
+              <span className="text-xs font-black text-[#4ecdc4]">#2</span>
             </div>
           </motion.div>
 
           {/* 1st Place */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.05 }}
-            className="flex flex-col items-center z-10"
-          >
-            <motion.div
-              animate={{ y: [0, -6, 0] }}
-              transition={{ duration: 2, repeat: Infinity }}
-              className="text-yellow-400"
-            >👑</motion.div>
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#ffd600]/20 to-[#ffab00]/20 border-4 border-[#ffd600] flex items-center justify-center text-lg shadow-[0_0_30px_rgba(255,214,0,0.3)]">🥇</div>
-            <span className="text-[10px] font-black text-[var(--foreground)] mt-1 truncate max-w-[70px]">Alex 😎</span>
-            <div className="w-20 bg-gradient-to-t from-[#ffd600] to-[#ffab00] rounded-t-xl flex flex-col items-center justify-center py-3 mt-1 shadow-[0_0_30px_rgba(255,214,0,0.3)]">
-              <span className="text-xs font-black text-[#1a0a4d]">#1</span>
-              <span className="text-[9px] font-bold text-[#1a0a4d]/75">12 times</span>
+          <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, type: "spring", stiffness: 200, damping: 12 }} className="flex flex-col items-center -mt-4">
+            <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }} className="flex flex-col items-center">
+              <motion.div animate={{ rotate: [-5, 5, -5] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-2xl mb-1">👑</motion.div>
+              <div className="relative">
+                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#ffd93d] to-[#ff9a3c] flex items-center justify-center text-3xl shadow-xl shadow-[#ffd93d]/40 border-2 border-white/50">
+                  🥇
+                </div>
+                <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1] }} transition={{ delay: 0.6, type: "spring" }} className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-r from-[#ffd93d] to-[#ff9a3c] rounded-full flex items-center justify-center text-xs font-black text-white shadow-lg">
+                  1
+                </motion.div>
+                <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity }} className="absolute -top-2 -left-2 text-xs">✨</motion.div>
+                <motion.div animate={{ scale: [1, 1.3, 1], opacity: [0.5, 1, 0.5] }} transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }} className="absolute -bottom-1 -right-2 text-xs">✨</motion.div>
+              </div>
+              <span className="text-sm font-extrabold text-[#ff9a3c] mt-2">Alex</span>
+              <span className="text-[10px] text-slate-400">🔥 12 wins</span>
+            </motion.div>
+            <div className="w-20 h-20 mt-2 bg-gradient-to-t from-[#ffd93d] to-[#ff9a3c] rounded-2xl flex items-center justify-center shadow-lg shadow-[#ffd93d]/30">
+              <div className="text-center">
+                <span className="block text-sm font-black text-[#1a0a4d]">#1</span>
+                <span className="block text-[10px] font-bold text-[#1a0a4d]/70">Champion</span>
+              </div>
             </div>
           </motion.div>
 
           {/* 3rd Place */}
-          <motion.div
-            initial={{ y: 30, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.25 }}
-            className="flex flex-col items-center"
-          >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-white/70 to-white/30 dark:from-[#1a1a3e] dark:to-[#12122a] border-2 border-[#ffab00]/30 flex items-center justify-center text-xs shadow-[0_0_12px_rgba(255,171,0,0.15)]">🥉</div>
-            <span className="text-[9px] font-black text-[var(--foreground)] mt-1 truncate max-w-[60px]">Sam 🎉</span>
-            <div className="w-14 bg-gradient-to-t from-[#ffab00]/30 to-[#ffab00]/10 rounded-t-xl flex flex-col items-center justify-center py-1 mt-1 shadow-[0_0_12px_rgba(255,171,0,0.1)] backdrop-blur">
-              <span className="text-[9px] font-black text-[#ffab00]">#3</span>
-              <span className="text-[8px] font-bold text-[#ffab00]/70">6 times</span>
+          <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, type: "spring", stiffness: 200, damping: 12 }} className="flex flex-col items-center">
+            <motion.div animate={{ y: [0, -3, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 1 }} className="flex flex-col items-center">
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#ff6b9d] to-[#ff8a80] flex items-center justify-center text-xl shadow-lg shadow-[#ff6b9d]/30 border-2 border-white/50">
+                  🥉
+                </div>
+                <motion.div initial={{ scale: 0 }} animate={{ scale: [0, 1] }} transition={{ delay: 1, type: "spring" }} className="absolute -top-1 -right-1 w-5 h-5 bg-[#ff6b9d] rounded-full flex items-center justify-center text-[10px] font-black text-white shadow">
+                  3
+                </motion.div>
+              </div>
+              <span className="text-xs font-bold text-[#ff6b9d] mt-2">Sam</span>
+              <span className="text-[10px] text-slate-400">🎉 6 wins</span>
+            </motion.div>
+            <div className="w-14 h-14 mt-2 bg-gradient-to-t from-[#ff6b9d]/30 to-[#ff6b9d]/5 rounded-2xl flex items-center justify-center backdrop-blur border border-[#ff6b9d]/20">
+              <span className="text-xs font-black text-[#ff6b9d]">#3</span>
             </div>
           </motion.div>
         </div>
-
-        {/* Ranked Rows */}
-        <div className="space-y-2">
-          {[
-            { rank: 4, name: "Taylor 🔥", times: 5, color: AVATAR_COLORS[3] },
-            { rank: 5, name: "Casey 🦄", times: 4, color: AVATAR_COLORS[4] },
-            { rank: 6, name: "Jordan 🪐", times: 3, color: AVATAR_COLORS[5] },
-            { rank: 7, name: "Mosey 🧁", times: 2, color: AVATAR_COLORS[6] },
-          ].map((row, idx) => (
-            <motion.div
-              key={idx}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 + idx * 0.08 }}
-              className="p-3 rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur border border-[#7c3aed]/20 flex justify-between items-center shadow-[0_0_12px_rgba(124,58,237,0.06)]"
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-black text-[#7c3aed]/50 w-4">{row.rank}</span>
-                <div 
-                  className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black text-white shadow-[0_0_12px_rgba(0,0,0,0.1)]"
-                  style={{ background: row.color, boxShadow: `0 0 14px ${row.color}40` }}
-                >
-                  {row.name.slice(0, 2).toUpperCase()}
-                </div>
-                <span className="text-xs font-black text-[var(--foreground)]">{row.name}</span>
-              </div>
-              <span className="text-[10px] font-black text-[#7c3aed]/60 bg-white/50 dark:bg-[#1a1a3e]/50 px-2.5 py-1 rounded-full border border-[#7c3aed]/10">
-                Paid {row.times} times
-              </span>
-            </motion.div>
-          ))}
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => triggerToast("Leaderboard image generated and copied!")}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-[#7c3aed] to-[#ec4899] text-white font-black text-xs shadow-[0_0_30px_rgba(124,58,237,0.3)]"
-        >
-          Share Leaderboard 🏆
-        </motion.button>
       </div>
+
+      {/* Ranked Rows */}
+      <div className="relative z-10 px-4 space-y-2.5">
+        {[
+          { rank: 4, name: "Taylor", emoji: "🔥", times: 5, color: "#a29bfe" },
+          { rank: 5, name: "Casey", emoji: "🦄", times: 4, color: "#fdcb6e" },
+          { rank: 6, name: "Jordan", emoji: "🪐", times: 3, color: "#00cec9" },
+          { rank: 7, name: "Mosey", emoji: "🧁", times: 2, color: "#fd79a8" },
+        ].map((row, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.4 + idx * 0.1, type: "spring", stiffness: 200, damping: 18 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            className="p-3 rounded-2xl bg-white/80 dark:bg-[#12122a]/90 backdrop-blur border border-white/50 dark:border-[#7c3aed]/10 flex items-center justify-between shadow-lg hover:shadow-xl transition-all group cursor-pointer"
+            style={{ borderInlineStart: `3px solid ${row.color}` }}
+          >
+            <div className="flex items-center gap-3">
+              <motion.div whileHover={{ scale: 1.2, rotate: 10 }} className="w-9 h-9 rounded-xl flex items-center justify-center font-black text-sm text-white shadow-lg" style={{ background: `linear-gradient(135deg, ${row.color}, ${row.color}dd)` }}>
+                {row.emoji}
+              </motion.div>
+              <div>
+                <span className="text-sm font-bold text-slate-800 dark:text-white">{row.name}</span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-[10px] font-semibold text-slate-400">#{row.rank}</span>
+                  <div className="w-16 h-1.5 bg-slate-100 dark:bg-[#1a1a3e] rounded-full overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${(row.times / 12) * 100}%` }} transition={{ delay: 0.6 + idx * 0.1, duration: 0.8, ease: "easeOut" }} className="h-full rounded-full" style={{ background: `linear-gradient(90deg, ${row.color}, ${row.color}aa)` }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold text-slate-500 bg-slate-50 dark:bg-[#1a1a3e] px-2.5 py-1 rounded-full border border-slate-100 dark:border-[#7c3aed]/10 opacity-0 group-hover:opacity-100 transition-opacity">
+                Paid {row.times}x
+              </span>
+              <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 2, repeat: Infinity, delay: idx * 0.3 }}>
+                <ChevronRight size={16} className="text-slate-300" />
+              </motion.div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Share Button */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 1.2 }} className="relative z-10 px-4 mt-6">
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={() => triggerToast("Leaderboard shared! 🎉")}
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-[#ff6b9d] via-[#a29bfe] to-[#4ecdc4] text-white font-extrabold text-sm shadow-xl shadow-[#ff6b9d]/30 relative overflow-hidden group"
+        >
+          <motion.div animate={{ x: ["-100%", "200%"] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }} className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-[-20deg]" />
+          <span className="relative z-10 flex items-center justify-center gap-2">
+            <Share2 size={18} />
+            Share Leaderboard 🏆
+            <Sparkles size={16} />
+          </span>
+        </motion.button>
+      </motion.div>
+
+      <div className="h-8" />
     </div>
   );
 
   // 11. Profile
   const renderProfileView = () => {
-    const xpPercent = Math.min(100, Math.floor((userXP / 700) * 100));
-    
     return (
-      <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a] pb-16">
-        {renderHeader("Profile 👤")}
-        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-          {/* Profile Card */}
-          <div className="p-5 text-center flex flex-col items-center relative overflow-hidden rounded-3xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 shadow-[0_0_30px_rgba(124,58,237,0.1)]">
-            <motion.span
-              initial={{ rotate: -10 }}
-              animate={{ rotate: [0, -5, 5, 0] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="absolute top-2 right-2 bg-gradient-to-r from-[#ffd600] to-[#ffab00] text-[#1a0a4d] text-[9px] font-black px-2 py-0.5 rounded-lg shadow-[0_0_12px_rgba(255,214,0,0.3)]"
-            >
-              PRO
-            </motion.span>
-            <motion.div
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ duration: 3, repeat: Infinity }}
-              className="w-16 h-16 rounded-3xl bg-gradient-to-br from-[#7c3aed]/20 to-[#ec4899]/20 border-2 border-[#7c3aed] flex items-center justify-center text-3xl shadow-[0_0_30px_rgba(124,58,237,0.2)] select-none"
-            >
-              😎
-            </motion.div>
-            <h3 className="font-black text-base text-[var(--foreground)] mt-3">Alex (You)</h3>
-            <p className="text-[10px] font-bold text-[#7c3aed]/50">alex@email.com</p>
+      <div className="flex-1 flex flex-col bg-[#faf8ff] dark:bg-[#0a0a1a] pb-16">
+        {/* Fixed Top App Bar */}
+        <div className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-6 py-4 bg-transparent">
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => { soundManager.playTick(); setView("home"); }}
+            className="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-md rounded-full text-white active:scale-95 transition-all"
+          >
+            <ArrowLeft size={20} />
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
+            onClick={() => triggerToast("Share coming soon!")}
+            className="w-10 h-10 flex items-center justify-center bg-white/20 backdrop-blur-md rounded-full text-white active:scale-95 transition-all"
+          >
+            <Share2 size={20} />
+          </motion.button>
+        </div>
 
-            {/* Level progress */}
-            <div className="w-full mt-4">
-              <div className="flex justify-between text-[9px] font-black text-[#7c3aed]/50 mb-1">
-                <span>LEVEL {userLevel}</span>
-                <span>{userXP} / 700 XP</span>
-              </div>
-              <div className="w-full h-2.5 bg-white/50 dark:bg-[#1a1a3e]/50 rounded-full overflow-hidden border border-[#7c3aed]/10">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${xpPercent}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="h-full bg-gradient-to-r from-[#7c3aed] to-[#ec4899] shadow-[0_0_12px_rgba(124,58,237,0.3)]"
+        {/* Header Section */}
+        <section className="relative pt-16 pb-24 overflow-hidden bg-gradient-to-br from-[#831ada] to-[#4a90e2]">
+          <div className="absolute bottom-0 left-0 w-full">
+            <svg className="w-full h-auto translate-y-0.5" viewBox="0 0 1440 320">
+              <path d="M0,160L48,176C96,192,192,224,288,229.3C384,235,480,213,576,181.3C672,149,768,107,864,112C960,117,1056,171,1152,181.3C1248,192,1344,160,1392,144L1440,128L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" fill="#faf8ff" fillOpacity="1" />
+            </svg>
+          </div>
+          <div className="relative z-10 flex flex-col items-center text-center px-6 pt-4">
+            <div className="relative mb-4">
+              <div className="w-28 h-28 rounded-full border-4 border-white shadow-lg overflow-hidden bg-[#FFD700]">
+                <img
+                  alt="John Doe"
+                  className="w-full h-full object-cover"
+                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuDo74jqV0seIEtUl1f_7zRIUWyKeR1a9H_P-oFQjgxE244jJY312XWrJ2sRTMCQXp86pWWB9_XSN37gTOo6iaY5ISTw14xaqnb4Zv_DnSJsrTh65AyEZ5QXCx3OTdK4oL0OcwuFa4EOIgwMbdpFYkEpadN_fSl8ichpmdJYIcHPDReg8R6CFnO4yqW--VPieJRT1HURyfEOs8prOPmsPHVbrx373PcrluRU4IQCqKiy2mDqym8U4EnxpJ7QOfyqRxXOuA2DJF162jPg"
                 />
               </div>
+              <motion.div
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => triggerToast("Edit profile coming soon!")}
+                className="absolute bottom-0 right-0 bg-[#283044] text-white p-1.5 rounded-full border-2 border-white shadow-sm cursor-pointer"
+              >
+                <Pencil size={16} />
+              </motion.div>
             </div>
+            <h1 className="text-white font-bold text-2xl mb-1">John Doe</h1>
+            <p className="text-white/70 text-base">john.doe@email.com</p>
           </div>
+        </section>
 
-          {/* Mini stats */}
-          <div className="grid grid-cols-3 gap-2">
+        {/* Stats Section (Overlapping) */}
+        <section className="px-6 -mt-8 relative z-20 mb-8">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { label: "Rounds", value: "12" },
-              { label: "Paid", value: "$340" },
-              { label: "Luck", value: "42%" },
+              { label: "Rounds", value: "27" },
+              { label: "Wins", value: "18" },
+              { label: "Paid Bills", value: "‹1,650" },
             ].map((stat, idx) => (
               <motion.div
                 key={idx}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.1 }}
-                className="p-3 text-center rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur border border-[#7c3aed]/20 shadow-[0_0_12px_rgba(124,58,237,0.06)]"
+                className="bg-white dark:bg-[#1a1a3e] p-4 rounded-xl shadow-sm text-center flex flex-col items-center justify-center border border-black/5 dark:border-white/5"
               >
-                <span className="text-[9px] font-bold text-[#7c3aed]/60 block uppercase">{stat.label}</span>
-                <span className="text-xs font-black text-[var(--foreground)] block mt-1">{stat.value}</span>
+                <span className="text-[#131b2e] dark:text-white font-bold text-2xl">{stat.value}</span>
+                <span className="text-[#737686] dark:text-white/50 text-xs font-medium">{stat.label}</span>
               </motion.div>
             ))}
           </div>
+        </section>
 
-          {/* Options links */}
-          <div className="rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 overflow-hidden shadow-[0_0_16px_rgba(124,58,237,0.08)]">
+        {/* Menu Section */}
+        <section className="px-6 space-y-3">
+          <div className="bg-white dark:bg-[#1a1a3e] rounded-xl shadow-sm border border-black/5 dark:border-white/5 overflow-hidden">
             {[
-              { label: "My Stats Details", icon: "📊", action: () => triggerToast("Loading detailed stats...") },
-              { label: "Change Theme Mode", icon: theme === "light" ? "🌙" : "☀️", action: () => { soundManager.playTick(); toggleTheme(); triggerToast(`Switched to ${theme === "light" ? "Dark" : "Light"} theme!`); } },
-              { label: "Achievements Guide", icon: "🏅", action: () => setView("achievements") },
-              { label: "App Settings", icon: "⚙️", action: () => setView("settings") },
+              { label: "My Groups", icon: Users, action: () => setView("groups") },
+              { label: "History", icon: History, action: () => triggerToast("History coming soon!") },
+              { label: "Friends", icon: UserPlus, action: () => triggerToast("Friends coming soon!") },
+              { label: "Achievements", icon: Trophy, action: () => setView("achievements") },
             ].map((item, idx) => (
               <motion.button
                 key={idx}
-                whileHover={{ x: 4 }}
-                onClick={item.action}
-                className="w-full px-4 py-3.5 flex items-center justify-between text-xs font-black text-[var(--foreground)] hover:bg-[#7c3aed]/5 transition text-left border-b border-[#7c3aed]/10 last:border-b-0"
+                whileTap={{ scale: 0.98 }}
+                onClick={() => { soundManager.playTick(); item.action(); }}
+                className="w-full flex items-center justify-between p-4 hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-b border-black/5 dark:border-white/5 last:border-b-0"
               >
-                <div className="flex items-center gap-3">
-                  <span>{item.icon}</span>
-                  <span>{item.label}</span>
+                <div className="flex items-center gap-4">
+                  <item.icon size={20} className="text-[#131b2e] dark:text-white" />
+                  <span className="font-medium text-[#131b2e] dark:text-white">{item.label}</span>
                 </div>
-                <ChevronRight size={12} className="text-[#7c3aed]/50" />
+                <ChevronRight size={20} className="text-[#737686]" />
               </motion.button>
             ))}
           </div>
-        </div>
+
+          {/* Log out */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => triggerToast("Logged out!")}
+            className="w-full mt-8 flex items-center justify-center gap-2 p-4 text-red-500 font-bold rounded-xl hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
+          >
+            <LogOut size={20} />
+            <span>Log out</span>
+          </motion.button>
+        </section>
       </div>
     );
   };
@@ -1159,115 +1156,7 @@ export default function WhoPayAppRouter() {
 
   // 15. Settings Screen
   const renderSettingsView = () => (
-    <div className="flex-1 flex flex-col bg-[#f5f0ff] dark:bg-[#0a0a1a]">
-      {renderHeader("Settings ⚙️")}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-        <div className="rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 overflow-hidden shadow-[0_0_16px_rgba(124,58,237,0.08)]">
-          {/* Sound Toggle */}
-          <div className="px-4 py-3.5 flex items-center justify-between border-b border-[#7c3aed]/10">
-            <div>
-              <span className="text-xs font-black text-[var(--foreground)] block">Sound Effects</span>
-              <span className="text-[9px] text-[#7c3aed]/50 font-semibold block mt-0.5">Spin wheel & roll sounds</span>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => {
-                soundManager.playTick();
-                setSoundEnabled(!soundEnabled);
-                triggerToast(soundEnabled ? "Muted sounds!" : "Sounds enabled!");
-              }}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                soundEnabled
-                  ? "bg-gradient-to-r from-[#00c853]/20 to-[#00e676]/20 text-[#00c853] border border-[#00c853]/30 shadow-[0_0_12px_rgba(0,200,83,0.15)]"
-                  : "bg-white/50 dark:bg-[#1a1a3e]/50 text-[#7c3aed]/40 border border-[#7c3aed]/10"
-              }`}
-            >
-              {soundEnabled ? "On" : "Off"}
-            </motion.button>
-          </div>
-
-          {/* Vibration Toggle */}
-          <div className="px-4 py-3.5 flex items-center justify-between border-b border-[#7c3aed]/10">
-            <div>
-              <span className="text-xs font-black text-[var(--foreground)] block">Haptic Vibration</span>
-              <span className="text-[9px] text-[#7c3aed]/50 font-semibold block mt-0.5">Feedback vibration when loser decided</span>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => {
-                soundManager.playTick();
-                setVibrationEnabled(!vibrationEnabled);
-                triggerToast(vibrationEnabled ? "Disabled vibration!" : "Vibration enabled!");
-              }}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                vibrationEnabled
-                  ? "bg-gradient-to-r from-[#00c853]/20 to-[#00e676]/20 text-[#00c853] border border-[#00c853]/30 shadow-[0_0_12px_rgba(0,200,83,0.15)]"
-                  : "bg-white/50 dark:bg-[#1a1a3e]/50 text-[#7c3aed]/40 border border-[#7c3aed]/10"
-              }`}
-            >
-              {vibrationEnabled ? "On" : "Off"}
-            </motion.button>
-          </div>
-
-          {/* Notifications Toggle */}
-          <div className="px-4 py-3.5 flex items-center justify-between">
-            <div>
-              <span className="text-xs font-black text-[var(--foreground)] block">Push Notifications</span>
-              <span className="text-[9px] text-[#7c3aed]/50 font-semibold block mt-0.5">Receive bills summary notifications</span>
-            </div>
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={() => {
-                soundManager.playTick();
-                setNotificationsEnabled(!notificationsEnabled);
-                triggerToast(notificationsEnabled ? "Disabled notifications!" : "Notifications enabled!");
-              }}
-              className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                notificationsEnabled
-                  ? "bg-gradient-to-r from-[#00c853]/20 to-[#00e676]/20 text-[#00c853] border border-[#00c853]/30 shadow-[0_0_12px_rgba(0,200,83,0.15)]"
-                  : "bg-white/50 dark:bg-[#1a1a3e]/50 text-[#7c3aed]/40 border border-[#7c3aed]/10"
-              }`}
-            >
-              {notificationsEnabled ? "On" : "Off"}
-            </motion.button>
-          </div>
-        </div>
-
-        <div className="rounded-2xl bg-white/70 dark:bg-[#12122a]/80 backdrop-blur-xl border border-[#7c3aed]/20 overflow-hidden shadow-[0_0_16px_rgba(124,58,237,0.08)]">
-          {[
-            { label: "Privacy Policy", icon: "🔒" },
-            { label: "Help & Support", icon: "💬" },
-            { label: "About WhoPay", icon: "ℹ️" },
-          ].map((item, idx) => (
-            <motion.button
-              key={idx}
-              whileHover={{ x: 4 }}
-              onClick={() => triggerToast(`Clicked ${item.label}`)}
-              className="w-full px-4 py-3.5 flex items-center justify-between text-xs font-black text-[var(--foreground)] hover:bg-[#7c3aed]/5 transition text-left border-b border-[#7c3aed]/10 last:border-b-0"
-            >
-              <div className="flex items-center gap-3">
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-              </div>
-              <ChevronRight size={12} className="text-[#7c3aed]/50" />
-            </motion.button>
-          ))}
-        </div>
-
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            soundManager.playTick();
-            setView("splash");
-            triggerToast("Logged out of session!");
-          }}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-500/20 to-red-600/20 text-red-500 border border-red-500/30 font-black text-xs flex items-center justify-center gap-2 backdrop-blur hover:shadow-[0_0_20px_rgba(239,68,68,0.15)] transition-all"
-        >
-          <LogOut size={14} /> Log Out
-        </motion.button>
-      </div>
-    </div>
+    <SettingsView />
   );
 
   // 16. Meme Generator
@@ -1406,7 +1295,7 @@ export default function WhoPayAppRouter() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -15 }}
               transition={{ duration: 0.2 }}
-              className="flex-1 flex flex-col h-full"
+              className="flex-1 flex flex-col h-full overflow-hidden"
             >
               {renderCurrentView()}
             </motion.div>
@@ -1429,7 +1318,7 @@ export default function WhoPayAppRouter() {
       </div>
 
       {/* Bottom Nav (mobile only) */}
-      <MobileNav />
+      {currentView !== "home" && <MobileNav />}
     </div>
   );
 }

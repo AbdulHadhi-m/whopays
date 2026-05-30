@@ -42,6 +42,7 @@ interface GameState {
   isSpinning: boolean;
   winner: string | null;
   winnerIndex: number | null;
+  lastGameType: "spin" | "dice" | null;
   spinHistory: SpinRecord[];
   
   // Navigation & Views
@@ -87,7 +88,7 @@ interface GameState {
   removeParticipant: (index: number) => void;
   clearParticipants: () => void;
   setSpinning: (spinning: boolean) => void;
-  setWinner: (winner: string | null, index: number | null) => void;
+  setWinner: (winner: string | null, index: number | null, gameType?: "spin" | "dice") => void;
   fetchHistory: () => Promise<void>;
   triggerSpin: () => Promise<number | null>;
   triggerDiceRoll: () => Promise<{ selectedIndex: number; winner: string; dice1: number; dice2: number; } | null>;
@@ -98,6 +99,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   isSpinning: false,
   winner: null,
   winnerIndex: null,
+  lastGameType: null,
   spinHistory: [],
 
   // Navigation & Views
@@ -306,8 +308,8 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({ isSpinning: spinning });
   },
 
-  setWinner: (winner, index) => {
-    set({ winner, winnerIndex: index });
+  setWinner: (winner, index, gameType) => {
+    set({ winner, winnerIndex: index, lastGameType: gameType ?? null });
     if (winner) {
       // Add XP to user for finishing a round
       get().addUserXP(50);

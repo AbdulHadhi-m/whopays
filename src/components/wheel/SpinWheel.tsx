@@ -83,7 +83,7 @@ export default function SpinWheel() {
     if (tickIntervalRef.current) clearInterval(tickIntervalRef.current);
     soundManager.playReveal();
     if (wheelIndex !== null && participants[wheelIndex]) {
-      setWinner(participants[wheelIndex], wheelIndex);
+      setWinner(participants[wheelIndex], wheelIndex, "spin");
     }
   };
 

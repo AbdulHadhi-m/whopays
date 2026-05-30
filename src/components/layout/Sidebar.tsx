@@ -1,5 +1,4 @@
 import { Home, Users, Dices, Trophy, History, Settings, User, Medal, Wand2, Ghost, Moon, Sun } from "lucide-react";
-import { motion } from "framer-motion";
 import { useGameStore } from "@/store/useGameStore";
 import { soundManager } from "@/components/shared/SoundManager";
 
@@ -21,14 +20,17 @@ export default function Sidebar() {
   ];
 
   return (
-    <div className="hidden lg:flex flex-col w-[280px] h-[calc(100%-2rem)] bg-payspin-blue dark:bg-payspin-dark-card text-white p-6 shadow-[0_20px_50px_rgba(37,99,235,0.2)] z-20 transition-colors duration-300 rounded-[2.5rem] my-4 ml-4 border-4 border-white dark:border-slate-800">
+    <div className="hidden lg:flex flex-col w-[280px] h-[calc(100%-2rem)] bg-white dark:bg-[#12122a] text-gray-900 dark:text-white p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.25)] z-20 transition-colors duration-300 rounded-[2.5rem] my-4 ml-4 border-4 border-slate-100 dark:border-slate-800">
+      
+      {/* Brand Header with Cartoon Tilt Icon */}
       <div className="flex items-center gap-3 mb-8 pl-2">
-        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-payspin-blue font-black text-2xl shadow-[0_6px_0_#9333ea] border-2 border-payspin-blue rotate-[-5deg]">
+        <div className="w-12 h-12 bg-purple-600 dark:bg-purple-800 rounded-2xl flex items-center justify-center text-white font-black text-2xl shadow-[0_6px_0_#4c1d95] border-2 border-purple-850 rotate-[-5deg]">
           <span>🎲</span>
         </div>
-        <h1 className="text-[28px] font-black tracking-tighter drop-shadow-md text-white">PaySpin</h1>
+        <h1 className="text-[28px] font-black tracking-tighter drop-shadow-sm text-gray-900 dark:text-white">PaySpin</h1>
       </div>
 
+      {/* Navigation list with original cartoon lift button physics */}
       <nav className="flex-1 space-y-2.5 pr-2 overflow-y-auto custom-scrollbar pb-4">
         {links.map((link) => {
           const isActive = currentView === link.view;
@@ -41,8 +43,8 @@ export default function Sidebar() {
               }}
               className={`w-full flex items-center gap-4 px-4 py-3 rounded-[1.2rem] font-black text-sm transition-all border-4 ${
                 isActive
-                  ? "bg-payspin-yellow text-payspin-text border-[#d97706] shadow-[0_4px_0_#d97706] translate-y-[-2px]"
-                  : "bg-transparent text-payspin-blue-100 border-transparent hover:bg-white/10 hover:border-white/20"
+                  ? "bg-purple-600 dark:bg-purple-700 text-white border-purple-800 dark:border-purple-900 shadow-[0_4px_0_#4c1d95] dark:shadow-[0_4px_0_#2e1065] translate-y-[-2px]"
+                  : "bg-transparent text-slate-500 dark:text-slate-400 border-transparent hover:bg-slate-100 dark:hover:bg-white/10 hover:border-slate-200 dark:hover:border-white/20"
               } active:shadow-none active:translate-y-[2px]`}
             >
               {link.icon}
@@ -52,6 +54,7 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* Cartoon Theme Switcher block */}
       <div className="mt-4 bg-gradient-to-br from-[#a855f7] to-[#7e22ce] p-4 rounded-[2rem] border-4 border-[#581c87] shadow-[0_6px_0_#581c87] relative overflow-hidden flex flex-col items-center text-center">
         <div className="absolute -top-6 -right-6 w-20 h-20 bg-white/20 rounded-full blur-2xl"></div>
         <button

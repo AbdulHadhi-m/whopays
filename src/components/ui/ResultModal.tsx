@@ -18,7 +18,7 @@ const FUN_CAPTIONS = [
 ];
 
 export default function ResultModal() {
-  const { winner, setWinner, setView } = useGameStore();
+  const { winner, setWinner, setView, lastGameType } = useGameStore();
 
   useEffect(() => {
     if (winner) triggerConfetti();
@@ -31,7 +31,7 @@ export default function ResultModal() {
 
   const handleNextRound = () => {
     setWinner(null, null);
-    setView("spin");
+    setView(lastGameType === "dice" ? "dice" : "spin");
   };
 
   const captionIndex = winner
